@@ -167,7 +167,7 @@
           </section>
         </div>
 
-        <!-- COLUMNA DERECHA: RESUMEN Y LISTA DE LÍDERES -->
+        <!-- COLUMNA DERECHA: RESUMEN, GRÁFICOS Y LISTA DE LÍDERES -->
         <div>
           <section class="subcard">
             <h3>Resumen de la comuna</h3>
@@ -188,6 +188,20 @@
             </div>
           </section>
 
+          <!-- GRÁFICOS -->
+          <section class="subcard" style="margin-top: 12px;">
+            <h3>Gráficos rápidos</h3>
+            <p class="small-text">
+              Visualización de líderes y personas vinculadas en esta comuna.
+            </p>
+            <div style="margin-bottom: 12px;">
+              <canvas id="chartPersonasPorLider" height="160"></canvas>
+            </div>
+            <div>
+              <canvas id="chartVotanTeresa" height="140"></canvas>
+            </div>
+          </section>
+
           <section class="subcard" style="margin-top: 12px;">
             <h3>Líderes y personas vinculadas</h3>
             <div id="lista-lideres" class="lista-lideres">
@@ -204,6 +218,8 @@
 
   </div>
 
+  <!-- Librería de gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lógica de la app -->
   <script src="assets/js/app.js"></script>
 </body>
