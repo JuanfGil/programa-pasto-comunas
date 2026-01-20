@@ -298,6 +298,63 @@ document.addEventListener("DOMContentLoaded", () => {
     renderVistaComuna();
   }
 
+  // -------- EDITAR LÍDER -------- //
+  function editarLider(idLider) {
+    const lider = lideres.find((l) => l.id === idLider);
+    if (!lider) return;
+
+    const nuevoNombre = prompt("Nombre del líder:", lider.nombre || "");
+    if (!nuevoNombre) return;
+
+    const nuevoDocumento = prompt("Documento del líder:", lider.documento || "");
+    if (!nuevoDocumento) return;
+
+    const nuevoTelefono = prompt("Teléfono del líder:", lider.telefono || "");
+    const nuevaDireccion = prompt("Dirección / barrio:", lider.direccion || "");
+    const nuevaZona = prompt("Zona de votación:", lider.zona || "");
+    const nuevoTipo = prompt("Tipo de líder (A, B o C):", lider.tipo || "");
+
+    lider.nombre = nuevoNombre.trim();
+    lider.documento = nuevoDocumento.trim();
+    lider.telefono = (nuevoTelefono || "").trim();
+    lider.direccion = (nuevaDireccion || "").trim();
+    lider.zona = (nuevaZona || "").trim();
+    lider.tipo = (nuevoTipo || "").trim().toUpperCase();
+
+    guardarDatosEnLocalStorage();
+    renderVistaComuna();
+  }
+
+  // -------- EDITAR PERSONA -------- //
+  function editarPersona(idPersona) {
+    const persona = personas.find((p) => p.id === idPersona);
+    if (!persona) return;
+
+    const nuevoNombre = prompt("Nombre de la persona:", persona.nombre || "");
+    if (!nuevoNombre) return;
+
+    const nuevoDocumento = prompt("Documento:", persona.documento || "");
+    if (!nuevoDocumento) return;
+
+    const nuevoTelefono = prompt("Teléfono:", persona.telefono || "");
+    const nuevaDireccion = prompt("Dirección:", persona.direccion || "");
+    const nuevaZona = prompt("Zona de votación:", persona.zona || "");
+
+    const conoce = confirm("¿Conoce al líder? Aceptar = Sí, Cancelar = No");
+    const vota = confirm("¿Se compromete a votar por Teresa? Aceptar = Sí, Cancelar = No");
+
+    persona.nombre = nuevoNombre.trim();
+    persona.documento = nuevoDocumento.trim();
+    persona.telefono = (nuevoTelefono || "").trim();
+    persona.direccion = (nuevaDireccion || "").trim();
+    persona.zona = (nuevaZona || "").trim();
+    persona.conoceLider = conoce;
+    persona.votaTeresa = vota;
+
+    guardarDatosEnLocalStorage();
+    renderVistaComuna();
+  }
+
   // -------- RENDER VISTA -------- //
   function renderVistaComuna() {
     if (!comunaActual) return;
@@ -343,6 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (p) => p.liderId === lider.id
       );
 
+      // ---- Encabezado del líder ----
       const header = document.createElement("div");
       header.className = "lider-header";
 
@@ -366,14 +424,25 @@ document.addEventListener("DOMContentLoaded", () => {
       infoLeft.appendChild(nombreSpan);
       if (metaSpan.textContent) infoLeft.appendChild(metaSpan);
 
-      // Botón eliminar líder
       const accionesLiderDiv = document.createElement("div");
+      accionesLiderDiv.style.display = "flex";
+      accionesLiderDiv.style.gap = "6px";
+
+      const btnEditarLider = document.createElement("button");
+      btnEditarLider.textContent = "Editar líder";
+      btnEditarLider.className = "btn-secondary";
+      btnEditarLider.style.fontSize = "12px";
+      btnEditarLider.style.padding = "4px 8px";
+      btnEditarLider.addEventListener("click", () => editarLider(lider.id));
+
       const btnEliminarLider = document.createElement("button");
       btnEliminarLider.textContent = "Eliminar líder";
       btnEliminarLider.className = "btn-secondary";
       btnEliminarLider.style.fontSize = "12px";
       btnEliminarLider.style.padding = "4px 8px";
       btnEliminarLider.addEventListener("click", () => eliminarLider(lider.id));
+
+      accionesLiderDiv.appendChild(btnEditarLider);
       accionesLiderDiv.appendChild(btnEliminarLider);
 
       header.appendChild(infoLeft);
@@ -381,6 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       card.appendChild(header);
 
+      // Resumen numérico de ese líder
       const resumenRight = document.createElement("div");
       resumenRight.className = "lider-meta";
       const totalPersonasLider = personasDelLider.length;
@@ -395,6 +465,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : "Aún no hay personas vinculadas a este líder.";
       card.appendChild(resumenTexto);
 
+      // ---- Tabla de personas ----
       if (totalPersonasLider > 0) {
         const tablaWrapper = document.createElement("div");
         tablaWrapper.className = "lider-tabla-wrapper";
@@ -433,6 +504,19 @@ document.addEventListener("DOMContentLoaded", () => {
           `;
 
           const accionesTd = tr.querySelector("td:last-child");
+          const contBotones = document.createElement("div");
+          contBotones.style.display = "flex";
+          contBotones.style.gap = "4px";
+
+          const btnEditarPersona = document.createElement("button");
+          btnEditarPersona.textContent = "Editar";
+          btnEditarPersona.className = "btn-secondary";
+          btnEditarPersona.style.fontSize = "11px";
+          btnEditarPersona.style.padding = "3px 6px";
+          btnEditarPersona.addEventListener("click", () =>
+            editarPersona(per.id)
+          );
+
           const btnEliminarPersona = document.createElement("button");
           btnEliminarPersona.textContent = "Eliminar";
           btnEliminarPersona.className = "btn-secondary";
@@ -441,7 +525,10 @@ document.addEventListener("DOMContentLoaded", () => {
           btnEliminarPersona.addEventListener("click", () =>
             eliminarPersona(per.id)
           );
-          accionesTd.appendChild(btnEliminarPersona);
+
+          contBotones.appendChild(btnEditarPersona);
+          contBotones.appendChild(btnEliminarPersona);
+          accionesTd.appendChild(contBotones);
 
           tbody.appendChild(tr);
         });
