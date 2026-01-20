@@ -28,7 +28,7 @@ function cargarReuniones() {
     if (Array.isArray(data)) {
       reuniones = data;
       if (reuniones.length > 0) {
-        nextReunionId = Math.max(...reuniones.map(r => r.id || 0)) + 1;
+        nextReunionId = Math.max(...reuniones.map((r) => r.id || 0)) + 1;
       }
     } else {
       reuniones = [];
@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function renderReuniones(tbody) {
   tbody.innerHTML = "";
 
-  const reunionesComuna = reuniones.filter(r => r.comuna === comunaActual);
+  const reunionesComuna = reuniones.filter((r) => r.comuna === comunaActual);
 
   if (reunionesComuna.length === 0) {
     const tr = document.createElement("tr");
@@ -162,25 +162,33 @@ function renderReuniones(tbody) {
       const tdTipo = document.createElement("td");
       tdTipo.textContent = reunion.tipo || "";
 
+      // ---- Estado con pastilla de color ----
       const tdEstado = document.createElement("td");
-      tdEstado.textContent =
-        reunion.estado === "realizada"
-          ? "Realizada"
-          : reunion.estado === "cancelada"
-          ? "Cancelada"
-          : "Pendiente";
+      const estadoBadge = document.createElement("span");
+      estadoBadge.classList.add("estado-badge");
 
+      let textoEstado = "";
+      if (reunion.estado === "realizada") {
+        estadoBadge.classList.add("estado-realizada");
+        textoEstado = "Realizada";
+      } else if (reunion.estado === "cancelada") {
+        estadoBadge.classList.add("estado-cancelada");
+        textoEstado = "Cancelada";
+      } else {
+        estadoBadge.classList.add("estado-pendiente");
+        textoEstado = "Pendiente";
+      }
+      estadoBadge.textContent = textoEstado;
+      tdEstado.appendChild(estadoBadge);
+
+      // ---- Acciones ----
       const tdAcciones = document.createElement("td");
       const contBtns = document.createElement("div");
-      contBtns.style.display = "flex";
-      contBtns.style.gap = "4px";
-      contBtns.style.flexWrap = "wrap";
+      contBtns.className = "reuniones-acciones";
 
       const btnPendiente = document.createElement("button");
       btnPendiente.textContent = "Pendiente";
       btnPendiente.className = "btn-secondary";
-      btnPendiente.style.fontSize = "11px";
-      btnPendiente.style.padding = "3px 6px";
       btnPendiente.addEventListener("click", () =>
         actualizarEstadoReunion(reunion.id, "pendiente", tbody)
       );
@@ -188,8 +196,6 @@ function renderReuniones(tbody) {
       const btnRealizada = document.createElement("button");
       btnRealizada.textContent = "Realizada";
       btnRealizada.className = "btn-secondary";
-      btnRealizada.style.fontSize = "11px";
-      btnRealizada.style.padding = "3px 6px";
       btnRealizada.addEventListener("click", () =>
         actualizarEstadoReunion(reunion.id, "realizada", tbody)
       );
@@ -197,8 +203,6 @@ function renderReuniones(tbody) {
       const btnCancelada = document.createElement("button");
       btnCancelada.textContent = "Cancelada";
       btnCancelada.className = "btn-secondary";
-      btnCancelada.style.fontSize = "11px";
-      btnCancelada.style.Padding = "3px 6px";
       btnCancelada.addEventListener("click", () =>
         actualizarEstadoReunion(reunion.id, "cancelada", tbody)
       );
@@ -206,8 +210,6 @@ function renderReuniones(tbody) {
       const btnEliminar = document.createElement("button");
       btnEliminar.textContent = "Eliminar";
       btnEliminar.className = "btn-secondary";
-      btnEliminar.style.fontSize = "11px";
-      btnEliminar.style.padding = "3px 6px";
       btnEliminar.addEventListener("click", () =>
         eliminarReunion(reunion.id, tbody)
       );
