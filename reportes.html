@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
 <body>
+
+  <!-- MENÚ LATERAL -->
+  <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-title">Menú</div>
+    <nav class="sidebar-nav">
+      <a href="index.html">Captura</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="reuniones.html">Reuniones</a>
+      <a href="compromisos.html">Compromisos</a>
+    </nav>
+  </aside>
+
   <div class="app-container">
 
     <!-- ENCABEZADO -->
@@ -33,11 +46,6 @@
           <h2 id="rep-comuna-title">Comuna X</h2>
           <p id="rep-user-info" class="small-text"></p>
         </div>
-        <nav class="nav-panel" style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a href="index.html" class="btn-secondary">Captura</a>
-          <a href="reportes.html" class="btn-secondary">Reportes</a>
-          <a href="reuniones.html" class="btn-secondary">Reuniones</a>
-        </nav>
       </div>
 
       <!-- RESUMEN GENERAL -->
@@ -87,5 +95,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lógica específica de reportes -->
   <script src="assets/js/reportes.js"></script>
+  <script src="assets/js/menu.js"></script>
 </body>
 </html>
