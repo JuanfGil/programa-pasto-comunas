@@ -13,8 +13,8 @@ let nextLiderId = 1;
 let nextPersonaId = 1;
 
 // Datos en memoria
-const lideres = [];   // { id, comuna, nombre, telefono, direccion, zona, tipo }
-const personas = [];  // { id, comuna, liderId, nombre, telefono, direccion, zona, conoceLider, votaTeresa }
+const lideres = [];   // { id, comuna, nombre, documento, telefono, direccion, zona, tipo }
+const personas = [];  // { id, comuna, liderId, nombre, documento, telefono, direccion, zona, conoceLider, votaTeresa }
 
 // --------- Referencias DOM generales --------- //
 const loginForm = document.getElementById("login-form");
@@ -32,6 +32,7 @@ const personaForm = document.getElementById("persona-form");
 
 // Inputs de líder
 const liderNombreInput = document.getElementById("lider-nombre");
+const liderDocumentoInput = document.getElementById("lider-documento");
 const liderTelefonoInput = document.getElementById("lider-telefono");
 const liderDireccionInput = document.getElementById("lider-direccion");
 const liderZonaInput = document.getElementById("lider-zona");
@@ -40,6 +41,7 @@ const liderTipoInput = document.getElementById("lider-tipo");
 // Inputs de persona
 const selectLiderPersona = document.getElementById("select-lider-persona");
 const personaNombreInput = document.getElementById("persona-nombre");
+const personaDocumentoInput = document.getElementById("persona-documento");
 const personaTelefonoInput = document.getElementById("persona-telefono");
 const personaDireccionInput = document.getElementById("persona-direccion");
 const personaZonaInput = document.getElementById("persona-zona");
@@ -98,12 +100,15 @@ liderForm.addEventListener("submit", function (event) {
   }
 
   const nombre = liderNombreInput.value.trim();
-  if (!nombre) return;
+  const documento = liderDocumentoInput.value.trim();
+
+  if (!nombre || !documento) return;
 
   const nuevoLider = {
     id: nextLiderId++,
     comuna: comunaActual,
     nombre: nombre,
+    documento: documento,
     telefono: (liderTelefonoInput.value || "").trim(),
     direccion: (liderDireccionInput.value || "").trim(),
     zona: (liderZonaInput.value || "").trim(),
@@ -115,6 +120,7 @@ liderForm.addEventListener("submit", function (event) {
 
   // Limpiar formulario
   liderNombreInput.value = "";
+  liderDocumentoInput.value = "";
   liderTelefonoInput.value = "";
   liderDireccionInput.value = "";
   liderZonaInput.value = "";
@@ -139,7 +145,8 @@ personaForm.addEventListener("submit", function (event) {
   }
 
   const nombre = personaNombreInput.value.trim();
-  if (!nombre) return;
+  const documento = personaDocumentoInput.value.trim();
+  if (!nombre || !documento) return;
 
   const liderId = parseInt(liderIdStr, 10);
 
@@ -148,6 +155,7 @@ personaForm.addEventListener("submit", function (event) {
     comuna: comunaActual,
     liderId: liderId,
     nombre: nombre,
+    documento: documento,
     telefono: (personaTelefonoInput.value || "").trim(),
     direccion: (personaDireccionInput.value || "").trim(),
     zona: (personaZonaInput.value || "").trim(),
@@ -160,6 +168,7 @@ personaForm.addEventListener("submit", function (event) {
 
   // Limpiar formulario (dejamos el líder seleccionado)
   personaNombreInput.value = "";
+  personaDocumentoInput.value = "";
   personaTelefonoInput.value = "";
   personaDireccionInput.value = "";
   personaZonaInput.value = "";
@@ -237,6 +246,7 @@ function renderListaLideres(lideresComuna, personasComuna) {
     const metaSpan = document.createElement("div");
     metaSpan.className = "lider-meta";
     metaSpan.textContent = [
+      lider.documento ? `Doc: ${lider.documento}` : null,
       lider.telefono ? `Tel: ${lider.telefono}` : null,
       lider.direccion ? lider.direccion : null,
       lider.zona ? `Zona: ${lider.zona}` : null,
@@ -280,6 +290,7 @@ function renderListaLideres(lideresComuna, personasComuna) {
         <thead>
           <tr>
             <th>Nombre</th>
+            <th>Documento</th>
             <th>Teléfono</th>
             <th>Dirección</th>
             <th>Zona</th>
@@ -296,6 +307,7 @@ function renderListaLideres(lideresComuna, personasComuna) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${per.nombre}</td>
+          <td>${per.documento}</td>
           <td>${per.telefono}</td>
           <td>${per.direccion}</td>
           <td>${per.zona}</td>
