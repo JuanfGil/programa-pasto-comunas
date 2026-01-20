@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
 <body>
+
+  <!-- MENÚ LATERAL -->
+  <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-title">Menú</div>
+    <nav class="sidebar-nav">
+      <a href="index.html">Captura</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="reuniones.html">Reuniones</a>
+      <a href="compromisos.html">Compromisos</a>
+    </nav>
+  </aside>
+
   <div class="app-container">
 
     <!-- ENCABEZADO -->
@@ -29,20 +42,43 @@
     <!-- CON SESIÓN / REUNIONES -->
     <section id="reuniones-section" class="card" style="display:none;">
 
-      <!-- Cabecera de comuna + panel de botones -->
-      <div class="comuna-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+      <!-- Cabecera: comuna + panel -->
+      <div class="comuna-header">
         <div>
           <h2 id="reu-comuna-title">Comuna X</h2>
           <p id="reu-user-info" class="small-text"></p>
         </div>
 
-        <!-- Panel de navegación (captura / reportes / reuniones) -->
-        <nav class="nav-panel" style="display:flex; gap:8px; flex-wrap:wrap;">
+        <nav class="nav-panel">
           <a href="index.html" class="btn-secondary">Captura</a>
           <a href="reportes.html" class="btn-secondary">Reportes</a>
           <a href="reuniones.html" class="btn-secondary">Reuniones</a>
+          <a href="compromisos.html" class="btn-secondary">Compromisos</a>
         </nav>
       </div>
+
+      <!-- RESUMEN DE REUNIONES -->
+      <section class="subcard" style="margin-bottom:16px;">
+        <h3>Resumen de reuniones</h3>
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-label">Total</span>
+            <span id="reu-total" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Realizadas</span>
+            <span id="reu-realizadas" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Pendientes</span>
+            <span id="reu-pendientes" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Canceladas</span>
+            <span id="reu-canceladas" class="resumen-value">0</span>
+          </div>
+        </div>
+      </section>
 
       <!-- FORMULARIO NUEVA REUNIÓN -->
       <section class="subcard">
@@ -115,7 +151,8 @@
 
   </div>
 
-  <!-- JS de reuniones -->
+  <!-- JS -->
   <script src="assets/js/reuniones.js"></script>
+  <script src="assets/js/menu.js"></script>
 </body>
 </html>
