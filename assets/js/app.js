@@ -39,7 +39,6 @@ function cargarDatosDesdeLocalStorage() {
       personas = personasGuardadas;
     }
 
-    // Ajustar contadores de IDs
     if (lideres.length > 0) {
       nextLiderId = Math.max(...lideres.map((l) => l.id)) + 1;
     }
@@ -142,10 +141,8 @@ const canvasVotanTeresa = document.getElementById("chartVotanTeresa");
 
 // ================== INICIALIZACIÓN ================== //
 function inicializarApp() {
-  // 1. Cargar datos guardados (líderes y personas)
   cargarDatosDesdeLocalStorage();
 
-  // 2. Ver si hay sesión guardada
   const sesion = cargarSesion();
   if (sesion) {
     const user = usuarios.find(
@@ -165,7 +162,6 @@ function inicializarApp() {
   }
 }
 
-// Llamamos a la inicialización cuando se carga el script
 inicializarApp();
 
 // ================== MANEJO DE LOGIN ================== //
@@ -434,7 +430,15 @@ function renderListaLideres(lideresComuna, personasComuna) {
 
 // ================== GRÁFICOS ================== //
 function actualizarGraficos(lideresComuna, personasComuna) {
-  if (!canvasPersonasPorLider || !canvasVotanTeresa) return;
+  // Si Chart.js no está disponible, no hacemos nada
+  if (typeof Chart === "undefined") {
+    console.warn("Chart.js no está disponible. No se pueden dibujar gráficos.");
+    return;
+  }
+
+  if (!canvasPersonasPorLider || !canvasVotanTeresa) {
+    return;
+  }
 
   // ----- Gráfico: Personas por líder ----- //
   const labelsLideres = lideresComuna.map((l) => l.nombre);
