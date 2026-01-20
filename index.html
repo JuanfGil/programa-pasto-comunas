@@ -13,7 +13,9 @@
     <!-- ENCABEZADO -->
     <header class="app-header">
       <h1>Programa Pasto - Comunas</h1>
-      <p class="app-subtitle">Control de dinamizadores, líderes y bases de datos por comuna</p>
+      <p class="app-subtitle">
+        Control de dinamizadores, líderes y personas vinculadas por comuna.
+      </p>
     </header>
 
     <!-- LOGIN -->
@@ -42,22 +44,28 @@
 
     <!-- VISTA PRINCIPAL DE LA COMUNA (se muestra después del login) -->
     <section id="comuna-section" class="card" style="display:none;">
+
+      <!-- Cabecera de comuna + NAV -->
       <div class="comuna-header">
         <div>
           <h2 id="comuna-title">Comuna X</h2>
           <p id="dinamizador-info" class="small-text"></p>
         </div>
-        <!-- 🔹 Panel de navegación -->
-        <nav class="nav-panel" style="display:flex; gap:8px; flex-wrap:wrap;">
+
+        <!-- Panel exclusivo de botones -->
+        <nav class="nav-panel">
           <a href="index.html" class="btn-secondary">Captura</a>
           <a href="reportes.html" class="btn-secondary">Reportes</a>
           <a href="reuniones.html" class="btn-secondary">Reuniones</a>
         </nav>
       </div>
 
+      <!-- Layout de dos columnas -->
       <div class="comuna-layout">
+
         <!-- COLUMNA IZQUIERDA: FORMULARIOS -->
-        <div>
+        <div class="col-formularios">
+
           <!-- FORMULARIO: REGISTRAR LÍDER -->
           <section class="subcard">
             <h3>Registrar líder</h3>
@@ -88,12 +96,20 @@
 
               <div class="form-group">
                 <label for="lider-direccion">Dirección / Barrio</label>
-                <input type="text" id="lider-direccion" placeholder="Barrio, sector, referencia" />
+                <input
+                  type="text"
+                  id="lider-direccion"
+                  placeholder="Barrio, sector, referencia"
+                />
               </div>
 
               <div class="form-group">
                 <label for="lider-zona">Zona de votación</label>
-                <input type="text" id="lider-zona" placeholder="Puesto / mesa (si se conoce)" />
+                <input
+                  type="text"
+                  id="lider-zona"
+                  placeholder="Puesto / mesa (si se conoce)"
+                />
               </div>
 
               <div class="form-group">
@@ -128,7 +144,12 @@
 
               <div class="form-group">
                 <label for="persona-nombre">Nombre de la persona</label>
-                <input type="text" id="persona-nombre" required placeholder="Nombre completo" />
+                <input
+                  type="text"
+                  id="persona-nombre"
+                  required
+                  placeholder="Nombre completo"
+                />
               </div>
 
               <div class="form-group">
@@ -143,17 +164,29 @@
 
               <div class="form-group">
                 <label for="persona-telefono">Teléfono</label>
-                <input type="text" id="persona-telefono" placeholder="Número de contacto" />
+                <input
+                  type="text"
+                  id="persona-telefono"
+                  placeholder="Número de contacto"
+                />
               </div>
 
               <div class="form-group">
                 <label for="persona-direccion">Dirección</label>
-                <input type="text" id="persona-direccion" placeholder="Barrio, calle, referencia" />
+                <input
+                  type="text"
+                  id="persona-direccion"
+                  placeholder="Barrio, calle, referencia"
+                />
               </div>
 
               <div class="form-group">
                 <label for="persona-zona">Zona de votación</label>
-                <input type="text" id="persona-zona" placeholder="Puesto / mesa (si se conoce)" />
+                <input
+                  type="text"
+                  id="persona-zona"
+                  placeholder="Puesto / mesa (si se conoce)"
+                />
               </div>
 
               <div class="form-check-group">
@@ -173,10 +206,12 @@
               <button type="submit" class="btn-primary">Agregar persona</button>
             </form>
           </section>
+
         </div>
 
-        <!-- COLUMNA DERECHA: RESUMEN Y LISTA DE LÍDERES -->
-        <div>
+        <!-- COLUMNA DERECHA: RESUMEN + LISTA -->
+        <div class="col-resumen">
+
           <section class="subcard">
             <h3>Resumen de la comuna</h3>
 
@@ -202,6 +237,7 @@
               <!-- Aquí se dibujan los líderes y sus personas con JS -->
             </div>
           </section>
+
         </div>
       </div>
 
