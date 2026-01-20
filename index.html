@@ -8,6 +8,19 @@
   <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
 <body>
+
+  <!-- Botón y barra lateral de MENÚ -->
+  <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-title">Menú</div>
+    <nav class="sidebar-nav">
+      <a href="index.html">Captura</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="reuniones.html">Reuniones</a>
+      <a href="compromisos.html">Compromisos</a>
+    </nav>
+  </aside>
+
   <div class="app-container">
 
     <!-- ENCABEZADO -->
@@ -52,11 +65,12 @@
           <p id="dinamizador-info" class="small-text"></p>
         </div>
 
-        <!-- Panel exclusivo de botones -->
+        <!-- Panel de botones (sigue existiendo, además del menú lateral) -->
         <nav class="nav-panel">
           <a href="index.html" class="btn-secondary">Captura</a>
           <a href="reportes.html" class="btn-secondary">Reportes</a>
           <a href="reuniones.html" class="btn-secondary">Reuniones</a>
+          <a href="compromisos.html" class="btn-secondary">Compromisos</a>
         </nav>
       </div>
 
@@ -248,7 +262,8 @@
 
   </div>
 
-  <!-- Lógica de la app -->
+  <!-- JS -->
   <script src="assets/js/app.js"></script>
+  <script src="assets/js/menu.js"></script>
 </body>
 </html>
