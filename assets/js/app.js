@@ -277,6 +277,27 @@ document.addEventListener("DOMContentLoaded", () => {
     renderVistaComuna();
   });
 
+  // -------- ELIMINAR LÍDER -------- //
+  function eliminarLider(idLider) {
+    if (!confirm("¿Seguro que deseas eliminar este líder y todas sus personas vinculadas?")) {
+      return;
+    }
+    lideres = lideres.filter((l) => l.id !== idLider);
+    personas = personas.filter((p) => p.liderId !== idLider);
+    guardarDatosEnLocalStorage();
+    renderVistaComuna();
+  }
+
+  // -------- ELIMINAR PERSONA -------- //
+  function eliminarPersona(idPersona) {
+    if (!confirm("¿Seguro que deseas eliminar esta persona?")) {
+      return;
+    }
+    personas = personas.filter((p) => p.id !== idPersona);
+    guardarDatosEnLocalStorage();
+    renderVistaComuna();
+  }
+
   // -------- RENDER VISTA -------- //
   function renderVistaComuna() {
     if (!comunaActual) return;
@@ -345,16 +366,27 @@ document.addEventListener("DOMContentLoaded", () => {
       infoLeft.appendChild(nombreSpan);
       if (metaSpan.textContent) infoLeft.appendChild(metaSpan);
 
+      // Botón eliminar líder
+      const accionesLiderDiv = document.createElement("div");
+      const btnEliminarLider = document.createElement("button");
+      btnEliminarLider.textContent = "Eliminar líder";
+      btnEliminarLider.className = "btn-secondary";
+      btnEliminarLider.style.fontSize = "12px";
+      btnEliminarLider.style.padding = "4px 8px";
+      btnEliminarLider.addEventListener("click", () => eliminarLider(lider.id));
+      accionesLiderDiv.appendChild(btnEliminarLider);
+
+      header.appendChild(infoLeft);
+      header.appendChild(accionesLiderDiv);
+
+      card.appendChild(header);
+
       const resumenRight = document.createElement("div");
       resumenRight.className = "lider-meta";
       const totalPersonasLider = personasDelLider.length;
       const totalVotanLider = personasDelLider.filter((p) => p.votaTeresa).length;
       resumenRight.textContent = `Personas: ${totalPersonasLider} | Votan Teresa: ${totalVotanLider}`;
-
-      header.appendChild(infoLeft);
-      header.appendChild(resumenRight);
-
-      card.appendChild(header);
+      card.appendChild(resumenRight);
 
       const resumenTexto = document.createElement("div");
       resumenTexto.className = "lider-resumen";
@@ -379,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <th>Zona</th>
               <th>Conoce líder</th>
               <th>Vota Teresa</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -396,7 +429,20 @@ document.addEventListener("DOMContentLoaded", () => {
             <td>${per.zona}</td>
             <td>${per.conoceLider ? "✅" : "✖"}</td>
             <td>${per.votaTeresa ? "✅" : "✖"}</td>
+            <td></td>
           `;
+
+          const accionesTd = tr.querySelector("td:last-child");
+          const btnEliminarPersona = document.createElement("button");
+          btnEliminarPersona.textContent = "Eliminar";
+          btnEliminarPersona.className = "btn-secondary";
+          btnEliminarPersona.style.fontSize = "11px";
+          btnEliminarPersona.style.padding = "3px 6px";
+          btnEliminarPersona.addEventListener("click", () =>
+            eliminarPersona(per.id)
+          );
+          accionesTd.appendChild(btnEliminarPersona);
+
           tbody.appendChild(tr);
         });
 
