@@ -22,6 +22,10 @@ const LS_LIDERES_KEY = "pasto_lideres";
 const LS_PERSONAS_KEY = "pasto_personas";
 const LS_SESION_KEY = "pasto_sesion";
 
+// Charts
+let chartPersonasPorLider = null;
+let chartVotanTeresa = null;
+
 // ================== PERSISTENCIA: DATOS ================== //
 function cargarDatosDesdeLocalStorage() {
   try {
@@ -132,6 +136,10 @@ const totalVotanSpan = document.getElementById("total-votan");
 // Lista de líderes
 const listaLideresDiv = document.getElementById("lista-lideres");
 
+// Canvases de gráficos
+const canvasPersonasPorLider = document.getElementById("chartPersonasPorLider");
+const canvasVotanTeresa = document.getElementById("chartVotanTeresa");
+
 // ================== INICIALIZACIÓN ================== //
 function inicializarApp() {
   // 1. Cargar datos guardados (líderes y personas)
@@ -140,8 +148,9 @@ function inicializarApp() {
   // 2. Ver si hay sesión guardada
   const sesion = cargarSesion();
   if (sesion) {
-    // Buscar al usuario para validar que existe
-    const user = usuarios.find((u) => u.username === sesion.username && u.comuna === sesion.comuna);
+    const user = usuarios.find(
+      (u) => u.username === sesion.username && u.comuna === sesion.comuna
+    );
     if (user) {
       comunaActual = user.comuna;
       comunaTitle.textContent = comunaActual;
@@ -151,12 +160,9 @@ function inicializarApp() {
       renderVistaComuna();
       return;
     } else {
-      // Si no existe el usuario, limpiar sesión
       limpiarSesion();
     }
   }
-
-  // Si no hay sesión, se queda el login por defecto
 }
 
 // Llamamos a la inicialización cuando se carga el script
@@ -186,9 +192,7 @@ loginForm.addEventListener("submit", function (event) {
   loginSection.style.display = "none";
   comunaSection.style.display = "block";
 
-  // Guardar sesión para recordar al dinamizador
   guardarSesion(user);
-
   renderVistaComuna();
 });
 
@@ -197,7 +201,7 @@ logoutBtn.addEventListener("click", function () {
   loginSection.style.display = "block";
   loginForm.reset();
   comunaActual = null;
-  limpiarSesion(); // 👈 Al cerrar sesión, borrar sesión guardada
+  limpiarSesion();
 });
 
 // ================== REGISTRO DE LÍDER ================== //
@@ -227,9 +231,8 @@ liderForm.addEventListener("submit", function (event) {
   };
 
   lideres.push(nuevoLider);
-  guardarDatosEnLocalStorage(); // 👈 Guardar cambios
+  guardarDatosEnLocalStorage();
 
-  // Limpiar formulario
   liderNombreInput.value = "";
   liderDocumentoInput.value = "";
   liderTelefonoInput.value = "";
@@ -276,9 +279,8 @@ personaForm.addEventListener("submit", function (event) {
   };
 
   personas.push(nuevaPersona);
-  guardarDatosEnLocalStorage(); // 👈 Guardar cambios
+  guardarDatosEnLocalStorage();
 
-  // Limpiar formulario (dejamos el líder seleccionado)
   personaNombreInput.value = "";
   personaDocumentoInput.value = "";
   personaTelefonoInput.value = "";
@@ -297,10 +299,8 @@ function renderVistaComuna() {
   const lideresComuna = lideres.filter((l) => l.comuna === comunaActual);
   const personasComuna = personas.filter((p) => p.comuna === comunaActual);
 
-  // 1. Actualizar el select de líderes del formulario de personas
   actualizarSelectLideres(lideresComuna);
 
-  // 2. Actualizar resumen
   const totalLideres = lideresComuna.length;
   const totalPersonas = personasComuna.length;
   const totalVotan = personasComuna.filter((p) => p.votaTeresa).length;
@@ -309,12 +309,11 @@ function renderVistaComuna() {
   totalPersonasSpan.textContent = totalPersonas;
   totalVotanSpan.textContent = totalVotan;
 
-  // 3. Dibujar lista de líderes con sus personas
   renderListaLideres(lideresComuna, personasComuna);
+  actualizarGraficos(lideresComuna, personasComuna);
 }
 
 function actualizarSelectLideres(lideresComuna) {
-  // limpiar
   selectLiderPersona.innerHTML = '<option value="">Seleccione un líder</option>';
 
   lideresComuna.forEach((lider) => {
@@ -344,12 +343,10 @@ function renderListaLideres(lideresComuna, personasComuna) {
       (p) => p.liderId === lider.id
     );
 
-    // Header
     const header = document.createElement("div");
     header.className = "lider-header";
 
     const infoLeft = document.createElement("div");
-    const infoRight = document.createElement("div");
 
     const nombreSpan = document.createElement("div");
     nombreSpan.className = "lider-nombre";
@@ -382,7 +379,6 @@ function renderListaLideres(lideresComuna, personasComuna) {
 
     card.appendChild(header);
 
-    // Texto resumen debajo
     const resumenTexto = document.createElement("div");
     resumenTexto.className = "lider-resumen";
     resumenTexto.textContent = totalPersonasLider
@@ -390,7 +386,6 @@ function renderListaLideres(lideresComuna, personasComuna) {
       : "Aún no hay personas vinculadas a este líder.";
     card.appendChild(resumenTexto);
 
-    // Tabla de personas
     if (totalPersonasLider > 0) {
       const tablaWrapper = document.createElement("div");
       tablaWrapper.className = "lider-tabla-wrapper";
@@ -435,4 +430,95 @@ function renderListaLideres(lideresComuna, personasComuna) {
 
     listaLideresDiv.appendChild(card);
   });
+}
+
+// ================== GRÁFICOS ================== //
+function actualizarGraficos(lideresComuna, personasComuna) {
+  if (!canvasPersonasPorLider || !canvasVotanTeresa) return;
+
+  // ----- Gráfico: Personas por líder ----- //
+  const labelsLideres = lideresComuna.map((l) => l.nombre);
+  const datosPersonasPorLider = lideresComuna.map((l) =>
+    personasComuna.filter((p) => p.liderId === l.id).length
+  );
+
+  const dataBar = {
+    labels: labelsLideres,
+    datasets: [
+      {
+        label: "Personas vinculadas",
+        data: datosPersonasPorLider,
+      },
+    ],
+  };
+
+  const configBar = {
+    type: "bar",
+    data: dataBar,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxRotation: 45,
+            minRotation: 0,
+          },
+        },
+        y: {
+          beginAtZero: true,
+          precision: 0,
+        },
+      },
+    },
+  };
+
+  if (chartPersonasPorLider) {
+    chartPersonasPorLider.data = dataBar;
+    chartPersonasPorLider.update();
+  } else {
+    chartPersonasPorLider = new Chart(canvasPersonasPorLider, configBar);
+  }
+
+  // ----- Gráfico: Votan por Teresa (Sí / No) ----- //
+  const totalPersonas = personasComuna.length;
+  const totalVotan = personasComuna.filter((p) => p.votaTeresa).length;
+  const totalNoVotan = totalPersonas - totalVotan;
+
+  const dataPie = {
+    labels: ["Votan por Teresa", "Sin compromiso"],
+    datasets: [
+      {
+        data: [totalVotan, totalNoVotan],
+      },
+    ],
+  };
+
+  const configPie = {
+    type: "pie",
+    data: dataPie,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "bottom",
+        },
+      },
+    },
+  };
+
+  if (chartVotanTeresa) {
+    chartVotanTeresa.data = dataPie;
+    chartVotanTeresa.update();
+  } else {
+    chartVotanTeresa = new Chart(canvasVotanTeresa, configPie);
+  }
 }
