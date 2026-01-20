@@ -40,21 +40,139 @@
       </p>
     </main>
 
-    <!-- VISTA PRINCIPAL DE LA COMUNA (se muestra después del login) -->
+        <!-- VISTA PRINCIPAL DE LA COMUNA (se muestra después del login) -->
     <section id="comuna-section" class="card" style="display:none;">
       <div class="comuna-header">
         <h2 id="comuna-title">Comuna X</h2>
         <p id="dinamizador-info" class="small-text"></p>
       </div>
 
-      <p>
-        Bienvenido/a. Aquí verás la base de datos, líderes y reportes de tu comuna.
-      </p>
+      <!-- CONTENIDO PRINCIPAL DE LA COMUNA -->
+      <div class="comuna-layout">
 
-      <button id="logout-btn" class="btn-secondary">Cerrar sesión</button>
+        <!-- FORMULARIO DE REGISTRO -->
+        <section class="subcard">
+          <h3>Registrar líder / persona</h3>
+          <p class="small-text">
+            Cada registro pertenece a esta comuna. Más adelante se conectará con la base de datos y Excel.
+          </p>
+
+          <form id="registro-form">
+
+            <div class="form-group">
+              <label for="tipo-registro">Tipo de registro</label>
+              <select id="tipo-registro" required>
+                <option value="Líder">Líder</option>
+                <option value="Persona">Persona vinculada</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="nombre">Nombre completo</label>
+              <input type="text" id="nombre" required placeholder="Nombre y apellidos" />
+            </div>
+
+            <div class="form-group">
+              <label for="telefono">Teléfono</label>
+              <input type="text" id="telefono" placeholder="Número de contacto" />
+            </div>
+
+            <div class="form-group">
+              <label for="direccion">Dirección</label>
+              <input type="text" id="direccion" placeholder="Barrio, calle, referencia" />
+            </div>
+
+            <div class="form-group">
+              <label for="zona">Zona de votación</label>
+              <input type="text" id="zona" placeholder="Puesto / mesa (si se conoce)" />
+            </div>
+
+            <div class="form-group">
+              <label for="tipo-lider">Tipo de líder</label>
+              <select id="tipo-lider">
+                <option value="">No aplica / Sin definir</option>
+                <option value="Comunitario">Comunitario</option>
+                <option value="Juvenil">Juvenil</option>
+                <option value="Barrial">Barrial</option>
+                <option value="Sectorial">Sectorial</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="lider-asociado">Líder responsable</label>
+              <input
+                type="text"
+                id="lider-asociado"
+                placeholder="Nombre del líder que lo trae (si aplica)"
+              />
+            </div>
+
+            <div class="form-check-group">
+              <label>
+                <input type="checkbox" id="conoce-lider" />
+                Conoce personalmente al líder
+              </label>
+            </div>
+
+            <div class="form-check-group">
+              <label>
+                <input type="checkbox" id="vota-teresa" />
+                Se compromete a votar por Teresa
+              </label>
+            </div>
+
+            <button type="submit" class="btn-primary">Agregar registro</button>
+          </form>
+        </section>
+
+        <!-- RESUMEN Y TABLA -->
+        <section class="subcard">
+          <h3>Base de datos de la comuna</h3>
+
+          <div class="resumen-grid">
+            <div class="resumen-item">
+              <span class="resumen-label">Total registros</span>
+              <span id="total-registros" class="resumen-value">0</span>
+            </div>
+            <div class="resumen-item">
+              <span class="resumen-label">Líderes</span>
+              <span id="total-lideres" class="resumen-value">0</span>
+            </div>
+            <div class="resumen-item">
+              <span class="resumen-label">Votan por Teresa</span>
+              <span id="total-votan" class="resumen-value">0</span>
+            </div>
+          </div>
+
+          <div class="tabla-wrapper">
+            <table class="tabla-registros">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Nombre</th>
+                  <th>Teléfono</th>
+                  <th>Dirección</th>
+                  <th>Zona votación</th>
+                  <th>Tipo líder</th>
+                  <th>Líder resp.</th>
+                  <th>Conoce líder</th>
+                  <th>Vota Teresa</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-registros">
+                <!-- Aquí se insertan filas con JS -->
+              </tbody>
+            </table>
+          </div>
+
+        </section>
+      </div>
+
+      <div style="margin-top: 16px; display:flex; justify-content:flex-end;">
+        <button id="logout-btn" class="btn-secondary">Cerrar sesión</button>
+      </div>
     </section>
 
-  </div>
 
   <!-- Lógica de la app -->
   <script src="assets/js/app.js"></script>
