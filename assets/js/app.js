@@ -3,21 +3,16 @@ const usuarios = [
   { username: "dinamizador1", password: "1234", comuna: "Comuna 1" },
   { username: "dinamizador2", password: "1234", comuna: "Comuna 2" },
   { username: "dinamizador3", password: "1234", comuna: "Comuna 3" },
-  // Agrega más si quieres hacer pruebas.
 ];
 
 // ================== ESTADO GLOBAL ================== //
 let comunaActual = null;
-
-// Counters para IDs internos
 let nextLiderId = 1;
 let nextPersonaId = 1;
+let lideres = [];
+let personas = [];
 
-// Datos en memoria
-let lideres = [];   // { id, comuna, nombre, documento, telefono, direccion, zona, tipo }
-let personas = [];  // { id, comuna, liderId, nombre, documento, telefono, direccion, zona, conoceLider, votaTeresa }
-
-// Claves de localStorage (compartidas también con reportes.js)
+// Claves para localStorage (compartidas con reportes.js)
 const LS_LIDERES_KEY = "pasto_lideres";
 const LS_PERSONAS_KEY = "pasto_personas";
 const LS_SESION_KEY = "pasto_sesion";
@@ -25,24 +20,19 @@ const LS_SESION_KEY = "pasto_sesion";
 // ================== PERSISTENCIA: DATOS ================== //
 function cargarDatosDesdeLocalStorage() {
   try {
-    const lideresGuardados = JSON.parse(localStorage.getItem(LS_LIDERES_KEY) || "[]");
-    const personasGuardadas = JSON.parse(localStorage.getItem(LS_PERSONAS_KEY) || "[]");
-
-    if (Array.isArray(lideresGuardados)) {
-      lideres = lideresGuardados;
-    }
-    if (Array.isArray(personasGuardadas)) {
-      personas = personasGuardadas;
-    }
+    const l = JSON.parse(localStorage.getItem(LS_LIDERES_KEY) || "[]");
+    const p = JSON.parse(localStorage.getItem(LS_PERSONAS_KEY) || "[]");
+    if (Array.isArray(l)) lideres = l;
+    if (Array.isArray(p)) personas = p;
 
     if (lideres.length > 0) {
-      nextLiderId = Math.max(...lideres.map((l) => l.id)) + 1;
+      nextLiderId = Math.max(...lideres.map((x) => x.id || 0)) + 1;
     }
     if (personas.length > 0) {
-      nextPersonaId = Math.max(...personas.map((p) => p.id)) + 1;
+      nextPersonaId = Math.max(...personas.map((x) => x.id || 0)) + 1;
     }
   } catch (e) {
-    console.warn("No se pudo cargar datos desde localStorage:", e);
+    console.warn("Error cargando datos:", e);
     lideres = [];
     personas = [];
   }
@@ -53,20 +43,19 @@ function guardarDatosEnLocalStorage() {
     localStorage.setItem(LS_LIDERES_KEY, JSON.stringify(lideres));
     localStorage.setItem(LS_PERSONAS_KEY, JSON.stringify(personas));
   } catch (e) {
-    console.warn("No se pudo guardar en localStorage:", e);
+    console.warn("Error guardando datos:", e);
   }
 }
 
 // ================== PERSISTENCIA: SESIÓN ================== //
 function guardarSesion(user) {
   try {
-    const sesion = {
-      username: user.username,
-      comuna: user.comuna,
-    };
-    localStorage.setItem(LS_SESION_KEY, JSON.stringify(sesion));
+    localStorage.setItem(
+      LS_SESION_KEY,
+      JSON.stringify({ username: user.username, comuna: user.comuna })
+    );
   } catch (e) {
-    console.warn("No se pudo guardar la sesión:", e);
+    console.warn("Error guardando sesión:", e);
   }
 }
 
@@ -78,7 +67,7 @@ function cargarSesion() {
     if (!sesion || !sesion.username || !sesion.comuna) return null;
     return sesion;
   } catch (e) {
-    console.warn("No se pudo cargar la sesión:", e);
+    console.warn("Error cargando sesión:", e);
     return null;
   }
 }
@@ -87,26 +76,26 @@ function limpiarSesion() {
   try {
     localStorage.removeItem(LS_SESION_KEY);
   } catch (e) {
-    console.warn("No se pudo limpiar la sesión:", e);
+    console.warn("Error limpiando sesión:", e);
   }
 }
 
-// ================== LÓGICA DE LA PÁGINA PRINCIPAL ================== //
+// ================== LÓGICA SOLO PARA index.html ================== //
 document.addEventListener("DOMContentLoaded", () => {
-  // Referencias al DOM (solo existen en index.html)
+  // Tomamos referencias; si no existen, significa que NO estamos en index.html
   const loginForm = document.getElementById("login-form");
   const loginSection = document.getElementById("login-section");
   const comunaSection = document.getElementById("comuna-section");
+
+  // Si alguno de estos no existe, salimos y no hacemos nada más.
+  if (!loginForm || !loginSection || !comunaSection) {
+    return;
+  }
+
   const loginError = document.getElementById("login-error");
   const comunaTitle = document.getElementById("comuna-title");
   const dinamizadorInfo = document.getElementById("dinamizador-info");
   const logoutBtn = document.getElementById("logout-btn");
-
-  // Si no existen estos elementos, significa que NO estamos en index.html
-  if (!loginForm || !loginSection || !comunaSection) {
-    // No hacemos nada más en esta página
-    return;
-  }
 
   // Formularios
   const liderForm = document.getElementById("lider-form");
@@ -138,13 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Lista de líderes
   const listaLideresDiv = document.getElementById("lista-lideres");
 
-  // ---------- INICIALIZACIÓN EN INDEX ---------- //
+  // -------- INICIALIZAR -------- //
   function inicializarApp() {
     cargarDatosDesdeLocalStorage();
 
     const sesion = cargarSesion();
     if (sesion) {
-      // reconstruir usuario desde lista de usuarios simulados
       const user = usuarios.find(
         (u) => u.username === sesion.username && u.comuna === sesion.comuna
       );
@@ -160,13 +148,15 @@ document.addEventListener("DOMContentLoaded", () => {
         limpiarSesion();
       }
     }
-    // Si no hay sesión, se deja el login visible por defecto
+    // si no hay sesión → dejar login visible
+    loginSection.style.display = "block";
+    comunaSection.style.display = "none";
   }
 
   inicializarApp();
 
-  // ---------- MANEJO DE LOGIN ---------- //
-  loginForm.addEventListener("submit", function (event) {
+  // -------- LOGIN -------- //
+  loginForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
     const username = document.getElementById("username").value.trim();
@@ -177,11 +167,11 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     if (!user) {
-      loginError.style.display = "block";
+      if (loginError) loginError.style.display = "block";
       return;
     }
 
-    loginError.style.display = "none";
+    if (loginError) loginError.style.display = "none";
     comunaActual = user.comuna;
 
     comunaTitle.textContent = comunaActual;
@@ -193,7 +183,8 @@ document.addEventListener("DOMContentLoaded", () => {
     renderVistaComuna();
   });
 
-  logoutBtn.addEventListener("click", function () {
+  // -------- LOGOUT -------- //
+  logoutBtn.addEventListener("click", () => {
     comunaSection.style.display = "none";
     loginSection.style.display = "block";
     loginForm.reset();
@@ -201,10 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
     limpiarSesion();
   });
 
-  // ---------- REGISTRO DE LÍDER ---------- //
-  liderForm.addEventListener("submit", function (event) {
+  // -------- REGISTRO LÍDER -------- //
+  liderForm.addEventListener("submit", (event) => {
     event.preventDefault();
-
     if (!comunaActual) {
       alert("No hay comuna activa.");
       return;
@@ -212,14 +202,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const nombre = liderNombreInput.value.trim();
     const documento = liderDocumentoInput.value.trim();
-
     if (!nombre || !documento) return;
 
     const nuevoLider = {
       id: nextLiderId++,
       comuna: comunaActual,
-      nombre: nombre,
-      documento: documento,
+      nombre,
+      documento,
       telefono: (liderTelefonoInput.value || "").trim(),
       direccion: (liderDireccionInput.value || "").trim(),
       zona: (liderZonaInput.value || "").trim(),
@@ -240,10 +229,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderVistaComuna();
   });
 
-  // ---------- REGISTRO DE PERSONA VINCULADA ---------- //
-  personaForm.addEventListener("submit", function (event) {
+  // -------- REGISTRO PERSONA -------- //
+  personaForm.addEventListener("submit", (event) => {
     event.preventDefault();
-
     if (!comunaActual) {
       alert("No hay comuna activa.");
       return;
@@ -264,9 +252,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const nuevaPersona = {
       id: nextPersonaId++,
       comuna: comunaActual,
-      liderId: liderId,
-      nombre: nombre,
-      documento: documento,
+      liderId,
+      nombre,
+      documento,
       telefono: (personaTelefonoInput.value || "").trim(),
       direccion: (personaDireccionInput.value || "").trim(),
       zona: (personaZonaInput.value || "").trim(),
@@ -289,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderVistaComuna();
   });
 
-  // ---------- RENDER PRINCIPAL DE LA COMUNA ---------- //
+  // -------- RENDER VISTA -------- //
   function renderVistaComuna() {
     if (!comunaActual) return;
 
@@ -298,20 +286,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     actualizarSelectLideres(lideresComuna);
 
-    const totalLideres = lideresComuna.length;
-    const totalPersonas = personasComuna.length;
-    const totalVotan = personasComuna.filter((p) => p.votaTeresa).length;
-
-    totalLideresSpan.textContent = totalLideres;
-    totalPersonasSpan.textContent = totalPersonas;
-    totalVotanSpan.textContent = totalVotan;
+    totalLideresSpan.textContent = lideresComuna.length;
+    totalPersonasSpan.textContent = personasComuna.length;
+    totalVotanSpan.textContent = personasComuna.filter((p) => p.votaTeresa).length;
 
     renderListaLideres(lideresComuna, personasComuna);
   }
 
   function actualizarSelectLideres(lideresComuna) {
     selectLiderPersona.innerHTML = '<option value="">Seleccione un líder</option>';
-
     lideresComuna.forEach((lider) => {
       const opt = document.createElement("option");
       opt.value = String(lider.id);
@@ -343,7 +326,6 @@ document.addEventListener("DOMContentLoaded", () => {
       header.className = "lider-header";
 
       const infoLeft = document.createElement("div");
-
       const nombreSpan = document.createElement("div");
       nombreSpan.className = "lider-nombre";
       nombreSpan.textContent = lider.nombre;
@@ -353,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
       metaSpan.textContent = [
         lider.documento ? `Doc: ${lider.documento}` : null,
         lider.telefono ? `Tel: ${lider.telefono}` : null,
-        lider.direccion ? lider.direccion : null,
+        lider.direccion || null,
         lider.zona ? `Zona: ${lider.zona}` : null,
         lider.tipo ? `Tipo: ${lider.tipo}` : null,
       ]
@@ -367,7 +349,6 @@ document.addEventListener("DOMContentLoaded", () => {
       resumenRight.className = "lider-meta";
       const totalPersonasLider = personasDelLider.length;
       const totalVotanLider = personasDelLider.filter((p) => p.votaTeresa).length;
-
       resumenRight.textContent = `Personas: ${totalPersonasLider} | Votan Teresa: ${totalVotanLider}`;
 
       header.appendChild(infoLeft);
@@ -388,7 +369,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const table = document.createElement("table");
         table.className = "lider-tabla";
-
         table.innerHTML = `
           <thead>
             <tr>
