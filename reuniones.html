@@ -13,7 +13,7 @@
     <header class="app-header">
       <h1>Reuniones de la comuna</h1>
       <p class="app-subtitle">
-        Puedes registrar reuniones, actualizar su estado o eliminarlas.
+        Registro y seguimiento de reuniones programadas por comuna.
       </p>
     </header>
 
@@ -29,15 +29,19 @@
     <!-- CON SESIÓN / REUNIONES -->
     <section id="reuniones-section" class="card" style="display:none;">
 
+      <!-- Cabecera de comuna + panel de botones -->
       <div class="comuna-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
         <div>
           <h2 id="reu-comuna-title">Comuna X</h2>
           <p id="reu-user-info" class="small-text"></p>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a href="index.html" class="btn-secondary">Volver a captura</a>
-          <a href="reportes.html" class="btn-secondary">Ver reportes</a>
-        </div>
+
+        <!-- Panel de navegación (captura / reportes / reuniones) -->
+        <nav class="nav-panel" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a href="index.html" class="btn-secondary">Captura</a>
+          <a href="reportes.html" class="btn-secondary">Reportes</a>
+          <a href="reuniones.html" class="btn-secondary">Reuniones</a>
+        </nav>
       </div>
 
       <!-- FORMULARIO NUEVA REUNIÓN -->
@@ -57,7 +61,12 @@
 
           <div class="form-group">
             <label for="reunion-lugar">Lugar</label>
-            <input type="text" id="reunion-lugar" required placeholder="Barrio, salón comunal, dirección..." />
+            <input
+              type="text"
+              id="reunion-lugar"
+              required
+              placeholder="Barrio, salón comunal, dirección..."
+            />
           </div>
 
           <div class="form-group">
@@ -80,7 +89,7 @@
       <section class="subcard" style="margin-top:16px;">
         <h3>Reuniones de la comuna</h3>
         <p class="small-text" style="margin-bottom:8px;">
-          Puedes actualizar el estado de cada reunión o eliminarla si fue cancelada definitivamente.
+          Actualiza el estado de cada reunión o elimínala si fue cancelada definitivamente.
         </p>
 
         <div class="tabla-wrapper">
@@ -96,7 +105,7 @@
               </tr>
             </thead>
             <tbody id="tbody-reuniones">
-              <!-- Contenido generado con JS -->
+              <!-- Filas generadas por JS -->
             </tbody>
           </table>
         </div>
@@ -106,7 +115,7 @@
 
   </div>
 
-  <!-- JS -->
+  <!-- JS de reuniones -->
   <script src="assets/js/reuniones.js"></script>
 </body>
 </html>
