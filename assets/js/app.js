@@ -1,5 +1,4 @@
 // Usuarios simulados para pruebas iniciales.
-// Luego esto se reemplazará por datos reales desde la base de datos.
 const usuarios = [
   { username: "dinamizador1", password: "1234", comuna: "Comuna 1" },
   { username: "dinamizador2", password: "1234", comuna: "Comuna 2" },
@@ -9,7 +8,15 @@ const usuarios = [
 
 let comunaActual = null;
 
-// Referencias DOM generales
+// Counters para IDs internos
+let nextLiderId = 1;
+let nextPersonaId = 1;
+
+// Datos en memoria
+const lideres = [];   // { id, comuna, nombre, telefono, direccion, zona, tipo }
+const personas = [];  // { id, comuna, liderId, nombre, telefono, direccion, zona, conoceLider, votaTeresa }
+
+// --------- Referencias DOM generales --------- //
 const loginForm = document.getElementById("login-form");
 const loginSection = document.getElementById("login-section");
 const comunaSection = document.getElementById("comuna-section");
@@ -19,28 +26,35 @@ const comunaTitle = document.getElementById("comuna-title");
 const dinamizadorInfo = document.getElementById("dinamizador-info");
 const logoutBtn = document.getElementById("logout-btn");
 
-// Referencias del formulario de registro
-const registroForm = document.getElementById("registro-form");
-const tipoRegistroInput = document.getElementById("tipo-registro");
-const nombreInput = document.getElementById("nombre");
-const telefonoInput = document.getElementById("telefono");
-const direccionInput = document.getElementById("direccion");
-const zonaInput = document.getElementById("zona");
-const tipoLiderInput = document.getElementById("tipo-lider");
-const liderAsociadoInput = document.getElementById("lider-asociado");
-const conoceLiderInput = document.getElementById("conoce-lider");
-const votaTeresaInput = document.getElementById("vota-teresa");
+// Formularios
+const liderForm = document.getElementById("lider-form");
+const personaForm = document.getElementById("persona-form");
 
-// Tabla y resumen
-const tbodyRegistros = document.getElementById("tbody-registros");
-const totalRegistrosSpan = document.getElementById("total-registros");
+// Inputs de líder
+const liderNombreInput = document.getElementById("lider-nombre");
+const liderTelefonoInput = document.getElementById("lider-telefono");
+const liderDireccionInput = document.getElementById("lider-direccion");
+const liderZonaInput = document.getElementById("lider-zona");
+const liderTipoInput = document.getElementById("lider-tipo");
+
+// Inputs de persona
+const selectLiderPersona = document.getElementById("select-lider-persona");
+const personaNombreInput = document.getElementById("persona-nombre");
+const personaTelefonoInput = document.getElementById("persona-telefono");
+const personaDireccionInput = document.getElementById("persona-direccion");
+const personaZonaInput = document.getElementById("persona-zona");
+const personaConoceLiderInput = document.getElementById("persona-conoce-lider");
+const personaVotaTeresaInput = document.getElementById("persona-vota-teresa");
+
+// Resumen
 const totalLideresSpan = document.getElementById("total-lideres");
+const totalPersonasSpan = document.getElementById("total-personas");
 const totalVotanSpan = document.getElementById("total-votan");
 
-// Arreglo para guardar registros en memoria (simulado)
-const registros = [];
+// Lista de líderes
+const listaLideresDiv = document.getElementById("lista-lideres");
 
-// ------------------ LOGIN ------------------ //
+// --------- LOGIN --------- //
 loginForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -59,17 +73,14 @@ loginForm.addEventListener("submit", function (event) {
   loginError.style.display = "none";
   comunaActual = user.comuna;
 
-  // Mostrar vista de comuna
   comunaTitle.textContent = comunaActual;
   dinamizadorInfo.textContent = `Sesión iniciada como: ${user.username}`;
   loginSection.style.display = "none";
   comunaSection.style.display = "block";
 
-  // Cuando entra, refrescamos la tabla de esa comuna
-  renderTablaYResumen();
+  renderVistaComuna();
 });
 
-// Cerrar sesión
 logoutBtn.addEventListener("click", function () {
   comunaSection.style.display = "none";
   loginSection.style.display = "block";
@@ -77,8 +88,8 @@ logoutBtn.addEventListener("click", function () {
   comunaActual = null;
 });
 
-// ------------------ REGISTRO DE DATOS ------------------ //
-registroForm.addEventListener("submit", function (event) {
+// --------- REGISTRO DE LÍDER --------- //
+liderForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
   if (!comunaActual) {
@@ -86,75 +97,218 @@ registroForm.addEventListener("submit", function (event) {
     return;
   }
 
-  const nuevoRegistro = {
+  const nombre = liderNombreInput.value.trim();
+  if (!nombre) return;
+
+  const nuevoLider = {
+    id: nextLiderId++,
     comuna: comunaActual,
-    tipoRegistro: tipoRegistroInput.value,
-    nombre: nombreInput.value.trim(),
-    telefono: telefonoInput.value.trim() || "",
-    direccion: direccionInput.value.trim() || "",
-    zona: zonaInput.value.trim() || "",
-    tipoLider: tipoLiderInput.value || "",
-    liderAsociado: liderAsociadoInput.value.trim() || "",
-    conoceLider: conoceLiderInput.checked,
-    votaTeresa: votaTeresaInput.checked,
+    nombre: nombre,
+    telefono: (liderTelefonoInput.value || "").trim(),
+    direccion: (liderDireccionInput.value || "").trim(),
+    zona: (liderZonaInput.value || "").trim(),
+    tipo: liderTipoInput.value || "",
     fechaCreacion: new Date().toISOString(),
   };
 
-  registros.push(nuevoRegistro);
+  lideres.push(nuevoLider);
 
-  // Limpiar formulario (conservamos tipo de registro si quieres)
-  nombreInput.value = "";
-  telefonoInput.value = "";
-  direccionInput.value = "";
-  zonaInput.value = "";
-  tipoLiderInput.value = "";
-  liderAsociadoInput.value = "";
-  conoceLiderInput.checked = false;
-  votaTeresaInput.checked = false;
+  // Limpiar formulario
+  liderNombreInput.value = "";
+  liderTelefonoInput.value = "";
+  liderDireccionInput.value = "";
+  liderZonaInput.value = "";
+  liderTipoInput.value = "";
 
-  renderTablaYResumen();
+  renderVistaComuna();
 });
 
-// ------------------ RENDERIZAR TABLA Y RESUMEN ------------------ //
-function renderTablaYResumen() {
+// --------- REGISTRO DE PERSONA VINCULADA --------- //
+personaForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  if (!comunaActual) {
+    alert("No hay comuna activa.");
+    return;
+  }
+
+  const liderIdStr = selectLiderPersona.value;
+  if (!liderIdStr) {
+    alert("Seleccione un líder para vincular la persona.");
+    return;
+  }
+
+  const nombre = personaNombreInput.value.trim();
+  if (!nombre) return;
+
+  const liderId = parseInt(liderIdStr, 10);
+
+  const nuevaPersona = {
+    id: nextPersonaId++,
+    comuna: comunaActual,
+    liderId: liderId,
+    nombre: nombre,
+    telefono: (personaTelefonoInput.value || "").trim(),
+    direccion: (personaDireccionInput.value || "").trim(),
+    zona: (personaZonaInput.value || "").trim(),
+    conoceLider: !!personaConoceLiderInput.checked,
+    votaTeresa: !!personaVotaTeresaInput.checked,
+    fechaCreacion: new Date().toISOString(),
+  };
+
+  personas.push(nuevaPersona);
+
+  // Limpiar formulario (dejamos el líder seleccionado)
+  personaNombreInput.value = "";
+  personaTelefonoInput.value = "";
+  personaDireccionInput.value = "";
+  personaZonaInput.value = "";
+  personaConoceLiderInput.checked = true;
+  personaVotaTeresaInput.checked = false;
+
+  renderVistaComuna();
+});
+
+// --------- RENDER PRINCIPAL DE LA COMUNA --------- //
+function renderVistaComuna() {
   if (!comunaActual) return;
 
-  // Filtrar solo registros de esta comuna
-  const registrosComuna = registros.filter(
-    (r) => r.comuna === comunaActual
-  );
+  const lideresComuna = lideres.filter((l) => l.comuna === comunaActual);
+  const personasComuna = personas.filter((p) => p.comuna === comunaActual);
 
-  // Limpiar cuerpo de tabla
-  tbodyRegistros.innerHTML = "";
+  // 1. Actualizar el select de líderes del formulario de personas
+  actualizarSelectLideres(lideresComuna);
 
-  registrosComuna.forEach((reg) => {
-    const tr = document.createElement("tr");
+  // 2. Actualizar resumen
+  const totalLideres = lideresComuna.length;
+  const totalPersonas = personasComuna.length;
+  const totalVotan = personasComuna.filter((p) => p.votaTeresa).length;
 
-    tr.innerHTML = `
-      <td>${reg.tipoRegistro}</td>
-      <td>${reg.nombre}</td>
-      <td>${reg.telefono}</td>
-      <td>${reg.direccion}</td>
-      <td>${reg.zona}</td>
-      <td>${reg.tipoLider}</td>
-      <td>${reg.liderAsociado}</td>
-      <td>${reg.conoceLider ? "✅" : "✖"}</td>
-      <td>${reg.votaTeresa ? "✅" : "✖"}</td>
-    `;
-
-    tbodyRegistros.appendChild(tr);
-  });
-
-  // Actualizar resumen
-  const total = registrosComuna.length;
-  const totalLideres = registrosComuna.filter(
-    (r) => r.tipoRegistro === "Líder"
-  ).length;
-  const totalVotan = registrosComuna.filter(
-    (r) => r.votaTeresa
-  ).length;
-
-  totalRegistrosSpan.textContent = total;
   totalLideresSpan.textContent = totalLideres;
+  totalPersonasSpan.textContent = totalPersonas;
   totalVotanSpan.textContent = totalVotan;
+
+  // 3. Dibujar lista de líderes con sus personas
+  renderListaLideres(lideresComuna, personasComuna);
+}
+
+function actualizarSelectLideres(lideresComuna) {
+  // limpiar
+  selectLiderPersona.innerHTML = '<option value="">Seleccione un líder</option>';
+
+  lideresComuna.forEach((lider) => {
+    const opt = document.createElement("option");
+    opt.value = String(lider.id);
+    opt.textContent = lider.nombre;
+    selectLiderPersona.appendChild(opt);
+  });
+}
+
+function renderListaLideres(lideresComuna, personasComuna) {
+  listaLideresDiv.innerHTML = "";
+
+  if (lideresComuna.length === 0) {
+    const p = document.createElement("p");
+    p.textContent = "Aún no hay líderes registrados en esta comuna.";
+    p.className = "small-text";
+    listaLideresDiv.appendChild(p);
+    return;
+  }
+
+  lideresComuna.forEach((lider) => {
+    const card = document.createElement("div");
+    card.className = "lider-card";
+
+    const personasDelLider = personasComuna.filter(
+      (p) => p.liderId === lider.id
+    );
+
+    // Header
+    const header = document.createElement("div");
+    header.className = "lider-header";
+
+    const infoLeft = document.createElement("div");
+    const infoRight = document.createElement("div");
+
+    const nombreSpan = document.createElement("div");
+    nombreSpan.className = "lider-nombre";
+    nombreSpan.textContent = lider.nombre;
+
+    const metaSpan = document.createElement("div");
+    metaSpan.className = "lider-meta";
+    metaSpan.textContent = [
+      lider.telefono ? `Tel: ${lider.telefono}` : null,
+      lider.direccion ? lider.direccion : null,
+      lider.zona ? `Zona: ${lider.zona}` : null,
+      lider.tipo ? `Tipo: ${lider.tipo}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+
+    infoLeft.appendChild(nombreSpan);
+    if (metaSpan.textContent) infoLeft.appendChild(metaSpan);
+
+    const resumenRight = document.createElement("div");
+    resumenRight.className = "lider-meta";
+    const totalPersonasLider = personasDelLider.length;
+    const totalVotanLider = personasDelLider.filter((p) => p.votaTeresa).length;
+
+    resumenRight.textContent = `Personas: ${totalPersonasLider} | Votan Teresa: ${totalVotanLider}`;
+
+    header.appendChild(infoLeft);
+    header.appendChild(resumenRight);
+
+    card.appendChild(header);
+
+    // Texto resumen debajo
+    const resumenTexto = document.createElement("div");
+    resumenTexto.className = "lider-resumen";
+    resumenTexto.textContent = totalPersonasLider
+      ? "Personas vinculadas a este líder:"
+      : "Aún no hay personas vinculadas a este líder.";
+    card.appendChild(resumenTexto);
+
+    // Tabla de personas
+    if (totalPersonasLider > 0) {
+      const tablaWrapper = document.createElement("div");
+      tablaWrapper.className = "lider-tabla-wrapper";
+
+      const table = document.createElement("table");
+      table.className = "lider-tabla";
+
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Dirección</th>
+            <th>Zona</th>
+            <th>Conoce líder</th>
+            <th>Vota Teresa</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+
+      const tbody = table.querySelector("tbody");
+
+      personasDelLider.forEach((per) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${per.nombre}</td>
+          <td>${per.telefono}</td>
+          <td>${per.direccion}</td>
+          <td>${per.zona}</td>
+          <td>${per.conoceLider ? "✅" : "✖"}</td>
+          <td>${per.votaTeresa ? "✅" : "✖"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tablaWrapper.appendChild(table);
+      card.appendChild(tablaWrapper);
+    }
+
+    listaLideresDiv.appendChild(card);
+  });
 }
