@@ -117,12 +117,12 @@ input:focus {
 
 .comuna-layout {
   display: grid;
-  grid-template-columns: 1.1fr 1.4fr;
+  grid-template-columns: 1.05fr 1.4fr;
   gap: 16px;
   margin-top: 8px;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .comuna-layout {
     grid-template-columns: 1fr;
   }
@@ -174,37 +174,75 @@ input:focus {
   font-weight: 600;
 }
 
-/* Tabla */
-.tabla-wrapper {
-  max-height: 340px;
-  overflow: auto;
+/* Lista de líderes */
+.lista-lideres {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.lider-card {
+  background: #ffffff;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
-  background: #ffffff;
+  padding: 10px 12px;
 }
 
-.tabla-registros {
+.lider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.lider-nombre {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.lider-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.lider-resumen {
+  font-size: 0.8rem;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+/* Tabla interna de personas */
+.lider-tabla-wrapper {
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.lider-tabla {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
-.tabla-registros thead {
+.lider-tabla thead {
   position: sticky;
   top: 0;
   background: #f3f4f6;
   z-index: 1;
 }
 
-.tabla-registros th,
-.tabla-registros td {
+.lider-tabla th,
+.lider-tabla td {
   border-bottom: 1px solid #e5e7eb;
-  padding: 6px 8px;
+  padding: 4px 6px;
   text-align: left;
   white-space: nowrap;
 }
 
-.tabla-registros tbody tr:nth-child(even) {
+.lider-tabla tbody tr:nth-child(even) {
   background: #f9fafb;
 }
-
