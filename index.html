@@ -40,90 +40,149 @@
       </p>
     </main>
 
-        <!-- VISTA PRINCIPAL DE LA COMUNA (se muestra después del login) -->
+            <!-- VISTA PRINCIPAL DE LA COMUNA (se muestra después del login) -->
     <section id="comuna-section" class="card" style="display:none;">
       <div class="comuna-header">
         <h2 id="comuna-title">Comuna X</h2>
         <p id="dinamizador-info" class="small-text"></p>
       </div>
 
-      <!-- CONTENIDO PRINCIPAL DE LA COMUNA -->
       <div class="comuna-layout">
+        <!-- COLUMNA IZQUIERDA: FORMULARIOS -->
+        <div>
+          <!-- FORMULARIO: REGISTRAR LÍDER -->
+          <section class="subcard">
+            <h3>Registrar líder</h3>
+            <p class="small-text">
+              Este líder quedará asociado a la comuna actual.
+            </p>
 
-        <!-- FORMULARIO DE REGISTRO -->
-        <section class="subcard">
-          <h3>Registrar líder / persona</h3>
-          <p class="small-text">
-            Cada registro pertenece a esta comuna. Más adelante se conectará con la base de datos y Excel.
-          </p>
+            <form id="lider-form">
+              <div class="form-group">
+                <label for="lider-nombre">Nombre del líder</label>
+                <input type="text" id="lider-nombre" required placeholder="Nombre completo" />
+              </div>
 
-          <form id="registro-form">
+              <div class="form-group">
+                <label for="lider-telefono">Teléfono</label>
+                <input type="text" id="lider-telefono" placeholder="Número de contacto" />
+              </div>
 
-            <div class="form-group">
-              <label for="tipo-registro">Tipo de registro</label>
-              <select id="tipo-registro" required>
-                <option value="Líder">Líder</option>
-                <option value="Persona">Persona vinculada</option>
-              </select>
+              <div class="form-group">
+                <label for="lider-direccion">Dirección / Barrio</label>
+                <input type="text" id="lider-direccion" placeholder="Barrio, sector, referencia" />
+              </div>
+
+              <div class="form-group">
+                <label for="lider-zona">Zona de votación</label>
+                <input type="text" id="lider-zona" placeholder="Puesto / mesa (si se conoce)" />
+              </div>
+
+              <div class="form-group">
+                <label for="lider-tipo">Tipo de líder</label>
+                <select id="lider-tipo">
+                  <option value="">Sin definir</option>
+                  <option value="Comunitario">Comunitario</option>
+                  <option value="Juvenil">Juvenil</option>
+                  <option value="Barrial">Barrial</option>
+                  <option value="Sectorial">Sectorial</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn-primary">Guardar líder</button>
+            </form>
+          </section>
+
+          <!-- FORMULARIO: REGISTRAR PERSONA VINCULADA -->
+          <section class="subcard" style="margin-top: 12px;">
+            <h3>Registrar persona vinculada</h3>
+            <p class="small-text">
+              Cada persona debe estar asociada a un líder de esta comuna.
+            </p>
+
+            <form id="persona-form">
+              <div class="form-group">
+                <label for="select-lider-persona">Líder</label>
+                <select id="select-lider-persona" required>
+                  <option value="">Seleccione un líder</option>
+                  <!-- Opciones se llenan con JS -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="persona-nombre">Nombre de la persona</label>
+                <input type="text" id="persona-nombre" required placeholder="Nombre completo" />
+              </div>
+
+              <div class="form-group">
+                <label for="persona-telefono">Teléfono</label>
+                <input type="text" id="persona-telefono" placeholder="Número de contacto" />
+              </div>
+
+              <div class="form-group">
+                <label for="persona-direccion">Dirección</label>
+                <input type="text" id="persona-direccion" placeholder="Barrio, calle, referencia" />
+              </div>
+
+              <div class="form-group">
+                <label for="persona-zona">Zona de votación</label>
+                <input type="text" id="persona-zona" placeholder="Puesto / mesa (si se conoce)" />
+              </div>
+
+              <div class="form-check-group">
+                <label>
+                  <input type="checkbox" id="persona-conoce-lider" checked />
+                  Conoce al líder
+                </label>
+              </div>
+
+              <div class="form-check-group">
+                <label>
+                  <input type="checkbox" id="persona-vota-teresa" />
+                  Se compromete a votar por Teresa
+                </label>
+              </div>
+
+              <button type="submit" class="btn-primary">Agregar persona</button>
+            </form>
+          </section>
+        </div>
+
+        <!-- COLUMNA DERECHA: RESUMEN Y LISTA DE LÍDERES -->
+        <div>
+          <section class="subcard">
+            <h3>Resumen de la comuna</h3>
+
+            <div class="resumen-grid">
+              <div class="resumen-item">
+                <span class="resumen-label">Líderes</span>
+                <span id="total-lideres" class="resumen-value">0</span>
+              </div>
+              <div class="resumen-item">
+                <span class="resumen-label">Personas vinculadas</span>
+                <span id="total-personas" class="resumen-value">0</span>
+              </div>
+              <div class="resumen-item">
+                <span class="resumen-label">Votan por Teresa</span>
+                <span id="total-votan" class="resumen-value">0</span>
+              </div>
             </div>
+          </section>
 
-            <div class="form-group">
-              <label for="nombre">Nombre completo</label>
-              <input type="text" id="nombre" required placeholder="Nombre y apellidos" />
+          <section class="subcard" style="margin-top: 12px;">
+            <h3>Líderes y personas vinculadas</h3>
+            <div id="lista-lideres" class="lista-lideres">
+              <!-- Aquí se dibujan los líderes y sus personas con JS -->
             </div>
+          </section>
+        </div>
+      </div>
 
-            <div class="form-group">
-              <label for="telefono">Teléfono</label>
-              <input type="text" id="telefono" placeholder="Número de contacto" />
-            </div>
+      <div style="margin-top: 16px; display:flex; justify-content:flex-end;">
+        <button id="logout-btn" class="btn-secondary">Cerrar sesión</button>
+      </div>
+    </section>
 
-            <div class="form-group">
-              <label for="direccion">Dirección</label>
-              <input type="text" id="direccion" placeholder="Barrio, calle, referencia" />
-            </div>
-
-            <div class="form-group">
-              <label for="zona">Zona de votación</label>
-              <input type="text" id="zona" placeholder="Puesto / mesa (si se conoce)" />
-            </div>
-
-            <div class="form-group">
-              <label for="tipo-lider">Tipo de líder</label>
-              <select id="tipo-lider">
-                <option value="">No aplica / Sin definir</option>
-                <option value="Comunitario">Comunitario</option>
-                <option value="Juvenil">Juvenil</option>
-                <option value="Barrial">Barrial</option>
-                <option value="Sectorial">Sectorial</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="lider-asociado">Líder responsable</label>
-              <input
-                type="text"
-                id="lider-asociado"
-                placeholder="Nombre del líder que lo trae (si aplica)"
-              />
-            </div>
-
-            <div class="form-check-group">
-              <label>
-                <input type="checkbox" id="conoce-lider" />
-                Conoce personalmente al líder
-              </label>
-            </div>
-
-            <div class="form-check-group">
-              <label>
-                <input type="checkbox" id="vota-teresa" />
-                Se compromete a votar por Teresa
-              </label>
-            </div>
-
-            <button type="submit" class="btn-primary">Agregar registro</button>
-          </form>
-        </section>
 
         <!-- RESUMEN Y TABLA -->
         <section class="subcard">
