@@ -1,4 +1,3 @@
-// Claves ya usadas en app.js / reportes.js
 const LS_SESION_KEY = "pasto_sesion";
 const LS_REUNIONES_KEY = "pasto_reuniones";
 
@@ -54,8 +53,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sesion = cargarSesionReu();
   if (!sesion) {
-    noSessionSection.style.display = "block";
-    reunionesSection.style.display = "none";
+    if (noSessionSection) noSessionSection.style.display = "block";
+    if (reunionesSection) reunionesSection.style.display = "none";
     return;
   }
 
@@ -69,66 +68,91 @@ document.addEventListener("DOMContentLoaded", () => {
   const reunionForm = document.getElementById("reunion-form");
   const tbodyReuniones = document.getElementById("tbody-reuniones");
 
-  reuComunaTitle.textContent = comunaActual;
-  reuUserInfo.textContent = `Sesión activa como: ${usuarioActual}`;
+  if (reuComunaTitle) reuComunaTitle.textContent = comunaActual;
+  if (reuUserInfo) reuUserInfo.textContent = `Sesión activa como: ${usuarioActual}`;
 
-  noSessionSection.style.display = "none";
-  reunionesSection.style.display = "block";
+  if (noSessionSection) noSessionSection.style.display = "none";
+  if (reunionesSection) reunionesSection.style.display = "block";
 
   // Manejo de formulario
-  reunionForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!comunaActual || !usuarioActual) {
-      alert("No hay comuna ni usuario activos.");
-      return;
-    }
+  if (reunionForm) {
+    reunionForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!comunaActual || !usuarioActual) {
+        alert("No hay comuna ni usuario activos.");
+        return;
+      }
 
-    const fechaInput = document.getElementById("reunion-fecha");
-    const horaInput = document.getElementById("reunion-hora");
-    const lugarInput = document.getElementById("reunion-lugar");
-    const tipoInput = document.getElementById("reunion-tipo");
+      const fechaInput = document.getElementById("reunion-fecha");
+      const horaInput = document.getElementById("reunion-hora");
+      const lugarInput = document.getElementById("reunion-lugar");
+      const tipoInput = document.getElementById("reunion-tipo");
 
-    const fecha = (fechaInput.value || "").trim();
-    const hora = (horaInput.value || "").trim();
-    const lugar = (lugarInput.value || "").trim();
-    const tipo = (tipoInput.value || "").trim();
+      const fecha = (fechaInput.value || "").trim();
+      const hora = (horaInput.value || "").trim();
+      const lugar = (lugarInput.value || "").trim();
+      const tipo = (tipoInput.value || "").trim();
 
-    if (!fecha || !hora || !lugar) {
-      alert("Por favor diligencia fecha, hora y lugar.");
-      return;
-    }
+      if (!fecha || !hora || !lugar) {
+        alert("Por favor diligencia fecha, hora y lugar.");
+        return;
+      }
 
-    const nuevaReunion = {
-      id: nextReunionId++,
-      comuna: comunaActual,
-      dinamizador: usuarioActual,
-      fecha,
-      hora,
-      lugar,
-      tipo: tipo || "Organización",
-      estado: "pendiente",
-      fechaCreacion: new Date().toISOString(),
-    };
+      const nuevaReunion = {
+        id: nextReunionId++,
+        comuna: comunaActual,
+        dinamizador: usuarioActual,
+        fecha,
+        hora,
+        lugar,
+        tipo: tipo || "Organización",
+        estado: "pendiente",
+        fechaCreacion: new Date().toISOString(),
+      };
 
-    reuniones.push(nuevaReunion);
-    guardarReuniones();
+      reuniones.push(nuevaReunion);
+      guardarReuniones();
 
-    fechaInput.value = "";
-    horaInput.value = "";
-    lugarInput.value = "";
-    tipoInput.value = "Organización";
+      fechaInput.value = "";
+      horaInput.value = "";
+      lugarInput.value = "";
+      tipoInput.value = "Motivación";
 
-    renderReuniones(tbodyReuniones);
-  });
+      renderReuniones(tbodyReuniones);
+    });
+  }
 
   renderReuniones(tbodyReuniones);
 });
 
+// ====== RESUMEN ====== //
+function actualizarResumenReuniones(reunionesComuna) {
+  const totalSpan = document.getElementById("reu-total");
+  const realSpan = document.getElementById("reu-realizadas");
+  const pendSpan = document.getElementById("reu-pendientes");
+  const cancSpan = document.getElementById("reu-canceladas");
+
+  const total = reunionesComuna.length;
+  const realizadas = reunionesComuna.filter((r) => r.estado === "realizada").length;
+  const pendientes = reunionesComuna.filter((r) => r.estado === "pendiente").length;
+  const canceladas = reunionesComuna.filter((r) => r.estado === "cancelada").length;
+
+  if (totalSpan) totalSpan.textContent = total;
+  if (realSpan) realSpan.textContent = realizadas;
+  if (pendSpan) pendSpan.textContent = pendientes;
+  if (cancSpan) cancSpan.textContent = canceladas;
+}
+
 // ====== RENDER REUNIONES ====== //
 function renderReuniones(tbody) {
+  if (!tbody) return;
+
   tbody.innerHTML = "";
 
   const reunionesComuna = reuniones.filter((r) => r.comuna === comunaActual);
+
+  // Actualizar resumen
+  actualizarResumenReuniones(reunionesComuna);
 
   if (reunionesComuna.length === 0) {
     const tr = document.createElement("tr");
@@ -180,17 +204,14 @@ function renderReuniones(tbody) {
       let textoEstado = "";
 
       if (reunion.estado === "realizada") {
-        // verde suave
         estadoBadge.style.backgroundColor = "#e6f6ec";
         estadoBadge.style.color = "#12653b";
         textoEstado = "Realizada";
       } else if (reunion.estado === "cancelada") {
-        // rojo suave
         estadoBadge.style.backgroundColor = "#fde7e9";
         estadoBadge.style.color = "#b42318";
         textoEstado = "Cancelada";
       } else {
-        // pendiente - amarillo suave
         estadoBadge.style.backgroundColor = "#fff7e0";
         estadoBadge.style.color = "#8a5a00";
         textoEstado = "Pendiente";
@@ -205,7 +226,6 @@ function renderReuniones(tbody) {
 
       const contBtns = document.createElement("div");
       contBtns.className = "reuniones-acciones";
-      // Por si el CSS no carga, ponemos también estilos mínimos
       contBtns.style.display = "flex";
       contBtns.style.flexDirection = "column";
       contBtns.style.alignItems = "flex-start";
