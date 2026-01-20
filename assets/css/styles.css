@@ -1,16 +1,16 @@
-/* ==================== */
-/* RESET Y TIPOGRAFÍA   */
-/* ==================== */
+/* =============== */
+/* RESET GENERAL   */
+/* =============== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {
   background-color: #f3f4f6;
-  color: #1e293b;
+  color: #1f2933;
   padding: 24px;
 }
 
@@ -18,18 +18,18 @@ a {
   text-decoration: none;
 }
 
-/* ==================== */
-/* CONTENEDOR PRINCIPAL */
-/* ==================== */
+/* =============== */
+/* CONTENEDOR APP  */
+/* =============== */
 
 .app-container {
   max-width: 1100px;
   margin: 0 auto;
 }
 
-/* ==================== */
-/* ENCABEZADOS          */
-/* ==================== */
+/* =============== */
+/* ENCABEZADO      */
+/* =============== */
 
 .app-header {
   text-align: center;
@@ -44,32 +44,32 @@ a {
 
 .app-subtitle {
   font-size: 14px;
-  color: #475569;
+  color: #64748b;
   margin-top: 4px;
 }
 
-/* ==================== */
-/* TARJETAS Y SUBCARD   */
-/* ==================== */
+/* =============== */
+/* TARJETAS        */
+/* =============== */
 
 .card {
-  background: white;
-  padding: 24px;
+  background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.06);
   margin-bottom: 24px;
 }
 
 .subcard {
-  background: #fff;
+  background-color: #ffffff;
   border-radius: 10px;
   padding: 18px;
   border: 1px solid #e2e8f0;
 }
 
-/* ==================== */
-/* TEXTOS               */
-/* ==================== */
+/* =============== */
+/* TEXTOS          */
+/* =============== */
 
 .small-text {
   font-size: 12px;
@@ -82,9 +82,9 @@ a {
   margin-top: 8px;
 }
 
-/* ==================== */
-/* FORMULARIOS          */
-/* ==================== */
+/* =============== */
+/* FORMULARIOS     */
+/* =============== */
 
 .form-group {
   display: flex;
@@ -96,14 +96,27 @@ a {
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 4px;
+  color: #0f172a;
 }
 
 .form-group input,
 .form-group select {
   border: 1px solid #cbd5e1;
-  padding: 10px;
   border-radius: 8px;
+  padding: 9px 10px;
   font-size: 14px;
+  background-color: #ffffff;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: 2px solid #2563eb33;
+  border-color: #2563eb;
+}
+
+.form-check-group {
+  margin-top: 4px;
+  margin-bottom: 8px;
 }
 
 .form-check-group label {
@@ -111,11 +124,12 @@ a {
   align-items: center;
   gap: 6px;
   font-size: 14px;
+  color: #334155;
 }
 
-/* ==================== */
-/* BOTONES              */
-/* ==================== */
+/* =============== */
+/* BOTONES         */
+/* =============== */
 
 .btn-primary,
 .btn-secondary {
@@ -125,16 +139,17 @@ a {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: 0.2s;
+  transition: background-color 0.2s ease, transform 0.05s ease;
 }
 
 .btn-primary {
   background-color: #2563eb;
-  color: white;
+  color: #ffffff;
 }
 
 .btn-primary:hover {
   background-color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -144,39 +159,141 @@ a {
 
 .btn-secondary:hover {
   background-color: #cbd5e1;
+  transform: translateY(-1px);
 }
 
-/* ==================== */
-/* RESÚMENES            */
-/* ==================== */
+/* =============== */
+/* COMUNA LAYOUT   */
+/* =============== */
+
+.comuna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.nav-panel {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.comuna-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.col-formularios,
+.col-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* =============== */
+/* RESUMEN         */
+/* =============== */
 
 .resumen-grid {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
 .resumen-item {
-  background: #f8fafc;
-  padding: 12px 14px;
-  border-radius: 8px;
-  min-width: 130px;
+  background-color: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 135px;
 }
 
 .resumen-label {
-  font-size: 12px;
-  color: #64748b;
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 2px;
 }
 
 .resumen-value {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
 }
 
-/* ==================== */
-/* TABLAS GENERALES     */
-/* ==================== */
+/* =============== */
+/* LISTA LÍDERES   */
+/* =============== */
+
+.lista-lideres {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.lider-card {
+  background-color: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+}
+
+.lider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.lider-nombre {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.lider-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.lider-resumen {
+  font-size: 13px;
+  color: #4b5563;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.lider-tabla-wrapper {
+  margin-top: 6px;
+  overflow-x: auto;
+}
+
+.lider-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.lider-tabla th,
+.lider-tabla td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lider-tabla th {
+  background-color: #eef2f7;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* ======================= */
+/* TABLAS GENERALES        */
+/* ======================= */
 
 .tabla-wrapper {
   margin-top: 10px;
@@ -189,34 +306,33 @@ a {
   font-size: 13px;
 }
 
-.tabla-registros th {
-  text-align: left;
-  padding: 10px;
-  background-color: #f8fafc;
-  font-weight: 600;
-}
-
+.tabla-registros th,
 .tabla-registros td {
-  padding: 8px;
+  padding: 10px;
   border-bottom: 1px solid #e2e8f0;
 }
 
-/* ==================== */
-/* ESTADOS DE REUNIONES */
-/* ==================== */
+.tabla-registros th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* ======================= */
+/* ESTADOS REUNIONES       */
+/* ======================= */
 
 .estado-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 12px;
+  padding: 2px 10px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
-/* colores estado */
 .estado-pendiente {
   background-color: #fff7e0;
   color: #8a5a00;
@@ -232,9 +348,9 @@ a {
   color: #b42318;
 }
 
-/* ==================== */
-/* TABLA DE REUNIONES   */
-/* ==================== */
+/* ======================= */
+/* TABLA REUNIONES         */
+/* ======================= */
 
 .tabla-reuniones {
   width: 100%;
@@ -266,7 +382,7 @@ a {
   width: 200px;
 }
 
-/* contenedor de botones */
+/* contenedor de botones en reuniones */
 .reuniones-acciones {
   display: flex;
   flex-direction: column;
@@ -278,11 +394,25 @@ a {
   padding: 4px 10px;
 }
 
-/* ==================== */
-/* RESPONSIVE           */
-/* ==================== */
+/* =============== */
+/* RESPONSIVE      */
+/* =============== */
+
+@media (max-width: 900px) {
+  .comuna-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 @media (max-width: 700px) {
+  body {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
   .resumen-grid {
     flex-direction: column;
   }
