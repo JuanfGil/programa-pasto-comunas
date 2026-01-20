@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reuniones - Programa Pasto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ENCABEZADO -->
+    <header class="app-header">
+      <h1>Reuniones de la comuna</h1>
+      <p class="app-subtitle">
+        Agenda básica de reuniones por comuna.
+      </p>
+    </header>
+
+    <!-- SIN SESIÓN -->
+    <section id="no-session-section" class="card" style="display:none;">
+      <h2>Sesión no encontrada</h2>
+      <p class="small-text">
+        Para gestionar reuniones, primero debes iniciar sesión en la página principal.
+      </p>
+      <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
+    </section>
+
+    <!-- CON SESIÓN / COMUNA ACTIVA -->
+    <section id="reuniones-section" class="card" style="display:none;">
+      <div class="comuna-header">
+        <div>
+          <h2 id="reu-comuna-title">Comuna X</h2>
+          <p id="reu-user-info" class="small-text"></p>
+        </div>
+        <nav class="nav-panel" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a href="index.html" class="btn-secondary">Captura</a>
+          <a href="reportes.html" class="btn-secondary">Reportes</a>
+          <a href="reuniones.html" class="btn-secondary">Reuniones</a>
+        </nav>
+      </div>
+
+      <!-- FORMULARIO DE REUNIÓN -->
+      <section class="subcard">
+        <h3>Programar nueva reunión</h3>
+        <p class="small-text">
+          Esta reunión quedará asociada a la comuna actual y al dinamizador en sesión.
+        </p>
+
+        <form id="reunion-form">
+          <div class="form-group">
+            <label for="reunion-fecha">Fecha</label>
+            <input type="date" id="reunion-fecha" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reunion-hora">Hora</label>
+            <input type="time" id="reunion-hora" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reunion-lugar">Lugar</label>
+            <input type="text" id="reunion-lugar" required placeholder="Barrio, salón comunal, etc." />
+          </div>
+
+          <div class="form-group">
+            <label for="reunion-tipo">Tipo de reunión</label>
+            <select id="reunion-tipo">
+              <option value="Organización">Organización</option>
+              <option value="Motivación">Motivación</option>
+              <option value="Formación">Formación</option>
+              <option value="Barrio / sector">Barrio / sector</option>
+              <option value="Otra">Otra</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn-primary">Guardar reunión</button>
+        </form>
+      </section>
+
+      <!-- LISTADO DE REUNIONES -->
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Reuniones de la comuna</h3>
+        <p class="small-text">
+          Puedes actualizar el estado de cada reunión o eliminarla si fue cancelada definitivamente.
+        </p>
+
+        <div class="tabla-wrapper">
+          <table class="tabla-registros">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Lugar</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-reuniones">
+              <!-- Filas generadas por JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+  </div>
+
+  <!-- Lógica de reuniones -->
+  <script src="assets/js/reuniones.js"></script>
+</body>
+</html>
