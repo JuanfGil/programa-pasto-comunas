@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reportes - Programa Pasto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ENCABEZADO -->
+    <header class="app-header">
+      <h1>Reportes de la comuna</h1>
+      <p class="app-subtitle">
+        Visualización de líderes, personas vinculadas y compromiso de voto.
+      </p>
+    </header>
+
+    <!-- SIN SESIÓN -->
+    <section id="no-session-section" class="card" style="display:none;">
+      <h2>Sesión no encontrada</h2>
+      <p class="small-text">
+        Para ver los reportes, primero debes iniciar sesión en la página principal.
+      </p>
+      <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
+    </section>
+
+    <!-- CON SESIÓN / CONMUNA ACTIVA -->
+    <section id="reportes-section" class="card" style="display:none;">
+      <div class="comuna-header">
+        <div>
+          <h2 id="rep-comuna-title">Comuna X</h2>
+          <p id="rep-user-info" class="small-text"></p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a href="index.html" class="btn-secondary">Volver a captura</a>
+        </div>
+      </div>
+
+      <!-- RESUMEN GENERAL -->
+      <section class="subcard">
+        <h3>Resumen general de la comuna</h3>
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-label">Líderes</span>
+            <span id="rep-total-lideres" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Personas vinculadas</span>
+            <span id="rep-total-personas" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Votan por Teresa</span>
+            <span id="rep-total-votan" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Sin compromiso</span>
+            <span id="rep-total-no-votan" class="resumen-value">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- GRÁFICOS -->
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Personas vinculadas por líder</h3>
+        <p class="small-text">
+          Cada barra representa cuántas personas ha vinculado cada líder en esta comuna.
+        </p>
+        <canvas id="chartPersonasPorLider" height="150"></canvas>
+      </section>
+
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Compromiso de voto</h3>
+        <p class="small-text">
+          Comparación entre personas que se comprometen a votar por Teresa y las que aún no.
+        </p>
+        <canvas id="chartVotanTeresa" height="140"></canvas>
+      </section>
+    </section>
+
+  </div>
+
+  <!-- Librería de gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lógica específica de reportes -->
+  <script src="assets/js/reportes.js"></script>
+</body>
+</html>
