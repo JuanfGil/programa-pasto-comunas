@@ -13,7 +13,7 @@
     <header class="app-header">
       <h1>Reuniones de la comuna</h1>
       <p class="app-subtitle">
-        Agenda básica de reuniones por comuna.
+        Puedes registrar reuniones, actualizar su estado o eliminarlas.
       </p>
     </header>
 
@@ -21,33 +21,30 @@
     <section id="no-session-section" class="card" style="display:none;">
       <h2>Sesión no encontrada</h2>
       <p class="small-text">
-        Para gestionar reuniones, primero debes iniciar sesión en la página principal.
+        Para ver este módulo primero debes iniciar sesión en la página principal.
       </p>
       <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
     </section>
 
-    <!-- CON SESIÓN / COMUNA ACTIVA -->
+    <!-- CON SESIÓN / REUNIONES -->
     <section id="reuniones-section" class="card" style="display:none;">
-      <div class="comuna-header">
+
+      <div class="comuna-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
         <div>
           <h2 id="reu-comuna-title">Comuna X</h2>
           <p id="reu-user-info" class="small-text"></p>
         </div>
-        <nav class="nav-panel" style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a href="index.html" class="btn-secondary">Captura</a>
-          <a href="reportes.html" class="btn-secondary">Reportes</a>
-          <a href="reuniones.html" class="btn-secondary">Reuniones</a>
-        </nav>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a href="index.html" class="btn-secondary">Volver a captura</a>
+          <a href="reportes.html" class="btn-secondary">Ver reportes</a>
+        </div>
       </div>
 
-      <!-- FORMULARIO DE REUNIÓN -->
+      <!-- FORMULARIO NUEVA REUNIÓN -->
       <section class="subcard">
-        <h3>Programar nueva reunión</h3>
-        <p class="small-text">
-          Esta reunión quedará asociada a la comuna actual y al dinamizador en sesión.
-        </p>
+        <h3>Registrar nueva reunión</h3>
 
-        <form id="reunion-form">
+        <form id="reunion-form" style="margin-top:12px;">
           <div class="form-group">
             <label for="reunion-fecha">Fecha</label>
             <input type="date" id="reunion-fecha" required />
@@ -60,17 +57,18 @@
 
           <div class="form-group">
             <label for="reunion-lugar">Lugar</label>
-            <input type="text" id="reunion-lugar" required placeholder="Barrio, salón comunal, etc." />
+            <input type="text" id="reunion-lugar" required placeholder="Barrio, salón comunal, dirección..." />
           </div>
 
           <div class="form-group">
             <label for="reunion-tipo">Tipo de reunión</label>
             <select id="reunion-tipo">
-              <option value="Organización">Organización</option>
               <option value="Motivación">Motivación</option>
+              <option value="Organización">Organización</option>
               <option value="Formación">Formación</option>
-              <option value="Barrio / sector">Barrio / sector</option>
-              <option value="Otra">Otra</option>
+              <option value="Barrial">Barrial</option>
+              <option value="Juventud">Juventud</option>
+              <option value="Comunitaria">Comunitaria</option>
             </select>
           </div>
 
@@ -78,15 +76,15 @@
         </form>
       </section>
 
-      <!-- LISTADO DE REUNIONES -->
+      <!-- LISTA DE REUNIONES -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Reuniones de la comuna</h3>
-        <p class="small-text">
+        <p class="small-text" style="margin-bottom:8px;">
           Puedes actualizar el estado de cada reunión o eliminarla si fue cancelada definitivamente.
         </p>
 
         <div class="tabla-wrapper">
-          <table class="tabla-registros">
+          <table class="tabla-registros tabla-reuniones">
             <thead>
               <tr>
                 <th>Fecha</th>
@@ -98,16 +96,17 @@
               </tr>
             </thead>
             <tbody id="tbody-reuniones">
-              <!-- Filas generadas por JS -->
+              <!-- Contenido generado con JS -->
             </tbody>
           </table>
         </div>
       </section>
+
     </section>
 
   </div>
 
-  <!-- Lógica de reuniones -->
+  <!-- JS -->
   <script src="assets/js/reuniones.js"></script>
 </body>
 </html>
