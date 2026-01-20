@@ -1,4 +1,4 @@
-// Usuarios simulados para pruebas iniciales.
+// ================== USUARIOS SIMULADOS ================== //
 const usuarios = [
   { username: "dinamizador1", password: "1234", comuna: "Comuna 1" },
   { username: "dinamizador2", password: "1234", comuna: "Comuna 2" },
@@ -6,6 +6,7 @@ const usuarios = [
   // Agrega más si quieres hacer pruebas.
 ];
 
+// ================== ESTADO GLOBAL ================== //
 let comunaActual = null;
 
 // Counters para IDs internos
@@ -16,11 +17,16 @@ let nextPersonaId = 1;
 let lideres = [];   // { id, comuna, nombre, documento, telefono, direccion, zona, tipo }
 let personas = [];  // { id, comuna, liderId, nombre, documento, telefono, direccion, zona, conoceLider, votaTeresa }
 
-// ----------------- PERSISTENCIA EN LOCALSTORAGE ----------------- //
-function cargarDesdeLocalStorage() {
+// Claves de localStorage
+const LS_LIDERES_KEY = "pasto_lideres";
+const LS_PERSONAS_KEY = "pasto_personas";
+const LS_SESION_KEY = "pasto_sesion";
+
+// ================== PERSISTENCIA: DATOS ================== //
+function cargarDatosDesdeLocalStorage() {
   try {
-    const lideresGuardados = JSON.parse(localStorage.getItem("pasto_lideres") || "[]");
-    const personasGuardadas = JSON.parse(localStorage.getItem("pasto_personas") || "[]");
+    const lideresGuardados = JSON.parse(localStorage.getItem(LS_LIDERES_KEY) || "[]");
+    const personasGuardadas = JSON.parse(localStorage.getItem(LS_PERSONAS_KEY) || "[]");
 
     if (Array.isArray(lideresGuardados)) {
       lideres = lideresGuardados;
@@ -31,10 +37,10 @@ function cargarDesdeLocalStorage() {
 
     // Ajustar contadores de IDs
     if (lideres.length > 0) {
-      nextLiderId = Math.max(...lideres.map(l => l.id)) + 1;
+      nextLiderId = Math.max(...lideres.map((l) => l.id)) + 1;
     }
     if (personas.length > 0) {
-      nextPersonaId = Math.max(...personas.map(p => p.id)) + 1;
+      nextPersonaId = Math.max(...personas.map((p) => p.id)) + 1;
     }
   } catch (e) {
     console.warn("No se pudo cargar datos desde localStorage:", e);
@@ -43,19 +49,50 @@ function cargarDesdeLocalStorage() {
   }
 }
 
-function guardarEnLocalStorage() {
+function guardarDatosEnLocalStorage() {
   try {
-    localStorage.setItem("pasto_lideres", JSON.stringify(lideres));
-    localStorage.setItem("pasto_personas", JSON.stringify(personas));
+    localStorage.setItem(LS_LIDERES_KEY, JSON.stringify(lideres));
+    localStorage.setItem(LS_PERSONAS_KEY, JSON.stringify(personas));
   } catch (e) {
     console.warn("No se pudo guardar en localStorage:", e);
   }
 }
 
-// Cargar datos apenas se ejecute el script
-cargarDesdeLocalStorage();
+// ================== PERSISTENCIA: SESIÓN ================== //
+function guardarSesion(user) {
+  try {
+    const sesion = {
+      username: user.username,
+      comuna: user.comuna,
+    };
+    localStorage.setItem(LS_SESION_KEY, JSON.stringify(sesion));
+  } catch (e) {
+    console.warn("No se pudo guardar la sesión:", e);
+  }
+}
 
-// --------- Referencias DOM generales --------- //
+function cargarSesion() {
+  try {
+    const raw = localStorage.getItem(LS_SESION_KEY);
+    if (!raw) return null;
+    const sesion = JSON.parse(raw);
+    if (!sesion || !sesion.username || !sesion.comuna) return null;
+    return sesion;
+  } catch (e) {
+    console.warn("No se pudo cargar la sesión:", e);
+    return null;
+  }
+}
+
+function limpiarSesion() {
+  try {
+    localStorage.removeItem(LS_SESION_KEY);
+  } catch (e) {
+    console.warn("No se pudo limpiar la sesión:", e);
+  }
+}
+
+// ================== REFERENCIAS AL DOM ================== //
 const loginForm = document.getElementById("login-form");
 const loginSection = document.getElementById("login-section");
 const comunaSection = document.getElementById("comuna-section");
@@ -95,7 +132,37 @@ const totalVotanSpan = document.getElementById("total-votan");
 // Lista de líderes
 const listaLideresDiv = document.getElementById("lista-lideres");
 
-// --------- LOGIN --------- //
+// ================== INICIALIZACIÓN ================== //
+function inicializarApp() {
+  // 1. Cargar datos guardados (líderes y personas)
+  cargarDatosDesdeLocalStorage();
+
+  // 2. Ver si hay sesión guardada
+  const sesion = cargarSesion();
+  if (sesion) {
+    // Buscar al usuario para validar que existe
+    const user = usuarios.find((u) => u.username === sesion.username && u.comuna === sesion.comuna);
+    if (user) {
+      comunaActual = user.comuna;
+      comunaTitle.textContent = comunaActual;
+      dinamizadorInfo.textContent = `Sesión iniciada como: ${user.username}`;
+      loginSection.style.display = "none";
+      comunaSection.style.display = "block";
+      renderVistaComuna();
+      return;
+    } else {
+      // Si no existe el usuario, limpiar sesión
+      limpiarSesion();
+    }
+  }
+
+  // Si no hay sesión, se queda el login por defecto
+}
+
+// Llamamos a la inicialización cuando se carga el script
+inicializarApp();
+
+// ================== MANEJO DE LOGIN ================== //
 loginForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -119,6 +186,9 @@ loginForm.addEventListener("submit", function (event) {
   loginSection.style.display = "none";
   comunaSection.style.display = "block";
 
+  // Guardar sesión para recordar al dinamizador
+  guardarSesion(user);
+
   renderVistaComuna();
 });
 
@@ -127,9 +197,10 @@ logoutBtn.addEventListener("click", function () {
   loginSection.style.display = "block";
   loginForm.reset();
   comunaActual = null;
+  limpiarSesion(); // 👈 Al cerrar sesión, borrar sesión guardada
 });
 
-// --------- REGISTRO DE LÍDER --------- //
+// ================== REGISTRO DE LÍDER ================== //
 liderForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -156,7 +227,7 @@ liderForm.addEventListener("submit", function (event) {
   };
 
   lideres.push(nuevoLider);
-  guardarEnLocalStorage(); // 👈 Guardar cambios
+  guardarDatosEnLocalStorage(); // 👈 Guardar cambios
 
   // Limpiar formulario
   liderNombreInput.value = "";
@@ -169,7 +240,7 @@ liderForm.addEventListener("submit", function (event) {
   renderVistaComuna();
 });
 
-// --------- REGISTRO DE PERSONA VINCULADA --------- //
+// ================== REGISTRO DE PERSONA VINCULADA ================== //
 personaForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -205,7 +276,7 @@ personaForm.addEventListener("submit", function (event) {
   };
 
   personas.push(nuevaPersona);
-  guardarEnLocalStorage(); // 👈 Guardar cambios
+  guardarDatosEnLocalStorage(); // 👈 Guardar cambios
 
   // Limpiar formulario (dejamos el líder seleccionado)
   personaNombreInput.value = "";
@@ -219,7 +290,7 @@ personaForm.addEventListener("submit", function (event) {
   renderVistaComuna();
 });
 
-// --------- RENDER PRINCIPAL DE LA COMUNA --------- //
+// ================== RENDER PRINCIPAL DE LA COMUNA ================== //
 function renderVistaComuna() {
   if (!comunaActual) return;
 
