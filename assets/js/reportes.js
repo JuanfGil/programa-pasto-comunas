@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const repTotalPersonas = document.getElementById("rep-total-personas");
   const repTotalVotan = document.getElementById("rep-total-votan");
   const repTotalNoVotan = document.getElementById("rep-total-no-votan");
+  const btnExportarCsv = document.getElementById("btn-exportar-csv");
 
   repComunaTitle.textContent = comunaActual;
   repUserInfo.textContent = `Sesión activa como: ${usuarioActual}`;
@@ -81,6 +82,13 @@ document.addEventListener("DOMContentLoaded", () => {
   repTotalPersonas.textContent = totalPersonas;
   repTotalVotan.textContent = totalVotan;
   repTotalNoVotan.textContent = totalNoVotan;
+
+  // Botón descargar CSV
+  if (btnExportarCsv) {
+    btnExportarCsv.addEventListener("click", () => {
+      exportarCsvComuna(lideresComuna, personasComuna);
+    });
+  }
 
   inicializarGraficos(lideresComuna, personasComuna);
 });
@@ -169,4 +177,96 @@ function inicializarGraficos(lideresComuna, personasComuna) {
   };
 
   chartVotanTeresa = new Chart(canvasVotanTeresa, configPie);
+}
+
+// ====== EXPORTAR CSV ====== //
+function escapeCsv(value) {
+  if (value === null || value === undefined) return "";
+  const str = String(value).replace(/"/g, '""');
+  return `"${str}"`;
+}
+
+function exportarCsvComuna(lideresComuna, personasComuna) {
+  if (!comunaActual) {
+    alert("No hay comuna activa para exportar.");
+    return;
+  }
+
+  // Mapa rápido de líderes por id
+  const mapaLiderPorId = new Map();
+  lideresComuna.forEach((l) => mapaLiderPorId.set(l.id, l));
+
+  const filas = [];
+
+  // Encabezados
+  filas.push([
+    "Comuna",
+    "Tipo registro",
+    "Nombre",
+    "Documento",
+    "Teléfono",
+    "Dirección",
+    "Zona votación",
+    "Tipo líder",
+    "Líder responsable",
+    "Conoce líder",
+    "Vota Teresa",
+  ].map(escapeCsv).join(";"));
+
+  // Líderes
+  lideresComuna.forEach((l) => {
+    const fila = [
+      comunaActual,
+      "Líder",
+      l.nombre || "",
+      l.documento || "",
+      l.telefono || "",
+      l.direccion || "",
+      l.zona || "",
+      l.tipo || "",
+      "",          // líder responsable (no aplica para líder)
+      "",          // conoce líder
+      "",          // vota Teresa
+    ];
+    filas.push(fila.map(escapeCsv).join(";"));
+  });
+
+  // Personas vinculadas
+  personasComuna.forEach((p) => {
+    const lider = mapaLiderPorId.get(p.liderId) || {};
+    const fila = [
+      comunaActual,
+      "Persona",
+      p.nombre || "",
+      p.documento || "",
+      p.telefono || "",
+      p.direccion || "",
+      p.zona || "",
+      lider.tipo || "",
+      lider.nombre || "",
+      p.conoceLider ? "Sí" : "No",
+      p.votaTeresa ? "Sí" : "No",
+    ];
+    filas.push(fila.map(escapeCsv).join(";"));
+  });
+
+  const contenido = filas.join("\r\n");
+  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+
+  const nombreArchivoBase = comunaActual.replace(/\s+/g, "_").toLowerCase();
+  const nombreArchivo = `reporte_${nombreArchivoBase}.csv`;
+
+  if (navigator.msSaveBlob) {
+    // Para IE antiguo (por si acaso)
+    navigator.msSaveBlob(blob, nombreArchivo);
+  } else {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", nombreArchivo);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 }
