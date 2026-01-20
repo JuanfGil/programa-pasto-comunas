@@ -167,7 +167,7 @@
           </section>
         </div>
 
-        <!-- COLUMNA DERECHA: RESUMEN, GRÁFICOS Y LISTA DE LÍDERES -->
+        <!-- COLUMNA DERECHA: RESUMEN Y LISTA DE LÍDERES -->
         <div>
           <section class="subcard">
             <h3>Resumen de la comuna</h3>
@@ -188,20 +188,6 @@
             </div>
           </section>
 
-          <!-- GRÁFICOS -->
-          <section class="subcard" style="margin-top: 12px;">
-            <h3>Gráficos rápidos</h3>
-            <p class="small-text">
-              Visualización de líderes y personas vinculadas en esta comuna.
-            </p>
-            <div style="margin-bottom: 12px;">
-              <canvas id="chartPersonasPorLider" height="160"></canvas>
-            </div>
-            <div>
-              <canvas id="chartVotanTeresa" height="140"></canvas>
-            </div>
-          </section>
-
           <section class="subcard" style="margin-top: 12px;">
             <h3>Líderes y personas vinculadas</h3>
             <div id="lista-lideres" class="lista-lideres">
@@ -210,6 +196,26 @@
           </section>
         </div>
       </div>
+
+      <!-- APARTADO APARTE: REPORTES GRÁFICOS -->
+      <section class="subcard" style="margin-top: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <h3 style="margin-bottom:0;">Reportes gráficos de la comuna</h3>
+          <p class="small-text" style="margin-bottom:0;">
+            Vista rápida de personas por líder y compromiso de voto.
+          </p>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <p class="small-text"><strong>Personas vinculadas por líder</strong></p>
+          <canvas id="chartPersonasPorLider" height="150"></canvas>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <p class="small-text"><strong>Compromiso de voto</strong> (votan por Teresa vs sin compromiso)</p>
+          <canvas id="chartVotanTeresa" height="140"></canvas>
+        </div>
+      </section>
 
       <div style="margin-top: 16px; display:flex; justify-content:flex-end;">
         <button id="logout-btn" class="btn-secondary">Cerrar sesión</button>
