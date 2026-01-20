@@ -13,8 +13,47 @@ let nextLiderId = 1;
 let nextPersonaId = 1;
 
 // Datos en memoria
-const lideres = [];   // { id, comuna, nombre, documento, telefono, direccion, zona, tipo }
-const personas = [];  // { id, comuna, liderId, nombre, documento, telefono, direccion, zona, conoceLider, votaTeresa }
+let lideres = [];   // { id, comuna, nombre, documento, telefono, direccion, zona, tipo }
+let personas = [];  // { id, comuna, liderId, nombre, documento, telefono, direccion, zona, conoceLider, votaTeresa }
+
+// ----------------- PERSISTENCIA EN LOCALSTORAGE ----------------- //
+function cargarDesdeLocalStorage() {
+  try {
+    const lideresGuardados = JSON.parse(localStorage.getItem("pasto_lideres") || "[]");
+    const personasGuardadas = JSON.parse(localStorage.getItem("pasto_personas") || "[]");
+
+    if (Array.isArray(lideresGuardados)) {
+      lideres = lideresGuardados;
+    }
+    if (Array.isArray(personasGuardadas)) {
+      personas = personasGuardadas;
+    }
+
+    // Ajustar contadores de IDs
+    if (lideres.length > 0) {
+      nextLiderId = Math.max(...lideres.map(l => l.id)) + 1;
+    }
+    if (personas.length > 0) {
+      nextPersonaId = Math.max(...personas.map(p => p.id)) + 1;
+    }
+  } catch (e) {
+    console.warn("No se pudo cargar datos desde localStorage:", e);
+    lideres = [];
+    personas = [];
+  }
+}
+
+function guardarEnLocalStorage() {
+  try {
+    localStorage.setItem("pasto_lideres", JSON.stringify(lideres));
+    localStorage.setItem("pasto_personas", JSON.stringify(personas));
+  } catch (e) {
+    console.warn("No se pudo guardar en localStorage:", e);
+  }
+}
+
+// Cargar datos apenas se ejecute el script
+cargarDesdeLocalStorage();
 
 // --------- Referencias DOM generales --------- //
 const loginForm = document.getElementById("login-form");
@@ -117,6 +156,7 @@ liderForm.addEventListener("submit", function (event) {
   };
 
   lideres.push(nuevoLider);
+  guardarEnLocalStorage(); // 👈 Guardar cambios
 
   // Limpiar formulario
   liderNombreInput.value = "";
@@ -165,6 +205,7 @@ personaForm.addEventListener("submit", function (event) {
   };
 
   personas.push(nuevaPersona);
+  guardarEnLocalStorage(); // 👈 Guardar cambios
 
   // Limpiar formulario (dejamos el líder seleccionado)
   personaNombreInput.value = "";
