@@ -43,8 +43,14 @@
     <!-- VISTA PRINCIPAL DE LA COMUNA (se muestra después del login) -->
     <section id="comuna-section" class="card" style="display:none;">
       <div class="comuna-header">
-        <h2 id="comuna-title">Comuna X</h2>
-        <p id="dinamizador-info" class="small-text"></p>
+        <div>
+          <h2 id="comuna-title">Comuna X</h2>
+          <p id="dinamizador-info" class="small-text"></p>
+        </div>
+        <!-- 🔹 Botón para ir a la página de reportes -->
+        <div>
+          <a href="reportes.html" class="btn-secondary">Ver reportes de la comuna</a>
+        </div>
       </div>
 
       <div class="comuna-layout">
@@ -197,26 +203,6 @@
         </div>
       </div>
 
-      <!-- APARTADO APARTE: REPORTES GRÁFICOS -->
-      <section class="subcard" style="margin-top: 16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <h3 style="margin-bottom:0;">Reportes gráficos de la comuna</h3>
-          <p class="small-text" style="margin-bottom:0;">
-            Vista rápida de personas por líder y compromiso de voto.
-          </p>
-        </div>
-
-        <div style="margin-top: 12px;">
-          <p class="small-text"><strong>Personas vinculadas por líder</strong></p>
-          <canvas id="chartPersonasPorLider" height="150"></canvas>
-        </div>
-
-        <div style="margin-top: 16px;">
-          <p class="small-text"><strong>Compromiso de voto</strong> (votan por Teresa vs sin compromiso)</p>
-          <canvas id="chartVotanTeresa" height="140"></canvas>
-        </div>
-      </section>
-
       <div style="margin-top: 16px; display:flex; justify-content:flex-end;">
         <button id="logout-btn" class="btn-secondary">Cerrar sesión</button>
       </div>
@@ -224,8 +210,6 @@
 
   </div>
 
-  <!-- Librería de gráficos -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lógica de la app -->
   <script src="assets/js/app.js"></script>
 </body>
