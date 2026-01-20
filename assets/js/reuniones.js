@@ -164,7 +164,10 @@ function renderReuniones(tbody) {
 
       // ---- Estado con pastilla de color ----
       const tdEstado = document.createElement("td");
+      tdEstado.classList.add("col-estado");
+
       const estadoBadge = document.createElement("span");
+      estadoBadge.classList.add("estado-badge");
       estadoBadge.style.display = "inline-flex";
       estadoBadge.style.alignItems = "center";
       estadoBadge.style.justifyContent = "center";
@@ -198,16 +201,21 @@ function renderReuniones(tbody) {
 
       // ---- Acciones ----
       const tdAcciones = document.createElement("td");
+      tdAcciones.classList.add("col-acciones");
+
       const contBtns = document.createElement("div");
+      contBtns.className = "reuniones-acciones";
+      // Por si el CSS no carga, ponemos también estilos mínimos
       contBtns.style.display = "flex";
-      contBtns.style.gap = "4px";
-      contBtns.style.flexWrap = "wrap";
+      contBtns.style.flexDirection = "column";
+      contBtns.style.alignItems = "flex-start";
+      contBtns.style.gap = "6px";
 
       const btnPendiente = document.createElement("button");
       btnPendiente.textContent = "Pendiente";
       btnPendiente.className = "btn-secondary";
       btnPendiente.style.fontSize = "11px";
-      btnPendiente.style.padding = "3px 6px";
+      btnPendiente.style.padding = "3px 10px";
       btnPendiente.addEventListener("click", () =>
         actualizarEstadoReunion(reunion.id, "pendiente", tbody)
       );
@@ -216,7 +224,7 @@ function renderReuniones(tbody) {
       btnRealizada.textContent = "Realizada";
       btnRealizada.className = "btn-secondary";
       btnRealizada.style.fontSize = "11px";
-      btnRealizada.style.padding = "3px 6px";
+      btnRealizada.style.padding = "3px 10px";
       btnRealizada.addEventListener("click", () =>
         actualizarEstadoReunion(reunion.id, "realizada", tbody)
       );
@@ -225,7 +233,7 @@ function renderReuniones(tbody) {
       btnCancelada.textContent = "Cancelada";
       btnCancelada.className = "btn-secondary";
       btnCancelada.style.fontSize = "11px";
-      btnCancelada.style.padding = "3px 6px";
+      btnCancelada.style.padding = "3px 10px";
       btnCancelada.addEventListener("click", () =>
         actualizarEstadoReunion(reunion.id, "cancelada", tbody)
       );
@@ -234,7 +242,7 @@ function renderReuniones(tbody) {
       btnEliminar.textContent = "Eliminar";
       btnEliminar.className = "btn-secondary";
       btnEliminar.style.fontSize = "11px";
-      btnEliminar.style.padding = "3px 6px";
+      btnEliminar.style.padding = "3px 10px";
       btnEliminar.addEventListener("click", () =>
         eliminarReunion(reunion.id, tbody)
       );
