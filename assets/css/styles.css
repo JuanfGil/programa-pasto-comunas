@@ -100,7 +100,8 @@ a {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 9px 10px;
@@ -108,8 +109,14 @@ a {
   background-color: #ffffff;
 }
 
+.form-group textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   outline: 2px solid #2563eb33;
   border-color: #2563eb;
 }
@@ -160,6 +167,76 @@ a {
 .btn-secondary:hover {
   background-color: #cbd5e1;
   transform: translateY(-1px);
+}
+
+/* =============== */
+/* MENÚ LATERAL    */
+/* =============== */
+
+.menu-toggle {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1001;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 9999px;
+  border: none;
+  background-color: #0f172a;
+  color: #f9fafb;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.4);
+}
+
+.menu-toggle:hover {
+  background-color: #111827;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 230px;
+  background-color: #0f172a;
+  color: #e5e7eb;
+  padding: 20px 16px;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease-out;
+  z-index: 1000;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-nav a {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #e5e7eb;
+  background-color: transparent;
+}
+
+.sidebar-nav a:hover {
+  background-color: #1f2937;
+}
+
+/* para que el contenido no quede tapado visualmente */
+.app-container {
+  margin-top: 16px;
 }
 
 /* =============== */
