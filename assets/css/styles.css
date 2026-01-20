@@ -114,3 +114,97 @@ input:focus {
 .comuna-header {
   margin-bottom: 10px;
 }
+
+.comuna-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 800px) {
+  .comuna-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.subcard {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.subcard h3 {
+  margin-bottom: 8px;
+}
+
+.form-check-group {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.form-check-group input {
+  margin-right: 6px;
+}
+
+/* Resumen */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.resumen-item {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.resumen-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.resumen-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Tabla */
+.tabla-wrapper {
+  max-height: 340px;
+  overflow: auto;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.tabla-registros {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.tabla-registros thead {
+  position: sticky;
+  top: 0;
+  background: #f3f4f6;
+  z-index: 1;
+}
+
+.tabla-registros th,
+.tabla-registros td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tabla-registros tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
