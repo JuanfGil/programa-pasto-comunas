@@ -5,6 +5,13 @@ const LS_SESION_KEY = "pasto_sesion";
 const LS_DATOS_KEY = "pasto_datos";
 
 /* ============================
+   ESTADO DE GRÁFICOS
+============================ */
+let chartCompromisos = null;
+let chartPersonasPorLider = null;
+let chartVotanTeresa = null;
+
+/* ============================
    HELPERS LOCALSTORAGE
 ============================ */
 function cargarSesionReportes() {
@@ -31,23 +38,15 @@ function cargarDatosReportes() {
 }
 
 /* ============================
-   FUNCIONES DE APOYO
+   HELPERS GENERALES
 ============================ */
 function setText(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = String(val);
 }
 
-// Destruye cualquier gráfico existente en ese canvas
-function destruirChartSiExiste(canvas) {
-  if (!window.Chart) return;
-  // Chart.getChart existe en Chart.js 3+
-  const existing = Chart.getChart(canvas);
-  if (existing) existing.destroy();
-}
-
 /* ============================
-   RESUMEN GENERAL (LÍDERES / PERSONAS)
+   RESUMEN GENERAL
 ============================ */
 function renderResumenComuna(datos, comuna, sesion) {
   const reportesSection = document.getElementById("reportes-section");
@@ -78,7 +77,7 @@ function renderResumenComuna(datos, comuna, sesion) {
     const personas = Array.isArray(lider.personas) ? lider.personas : [];
     totalPersonas += personas.length;
     personas.forEach((p) => {
-      if (p.votaTeresa) totalVotan += 1;
+      if (p.votaTeresa) totalVotan++;
     });
   });
 
@@ -117,9 +116,12 @@ function renderCompromisosResumen(comuna) {
   const canvas = document.getElementById("chartCompromisos");
   if (!canvas || !window.Chart) return;
 
-  destruirChartSiExiste(canvas);
+  // destruir gráfico previo si existe
+  if (chartCompromisos) {
+    chartCompromisos.destroy();
+  }
 
-  new Chart(canvas, {
+  chartCompromisos = new Chart(canvas, {
     type: "doughnut",
     data: {
       labels: ["Pendientes", "En gestión", "Cumplidos"],
@@ -158,9 +160,11 @@ function renderGraficoPersonasPorLider(datos, comuna) {
   const canvas = document.getElementById("chartPersonasPorLider");
   if (!canvas || !window.Chart) return;
 
-  destruirChartSiExiste(canvas);
+  if (chartPersonasPorLider) {
+    chartPersonasPorLider.destroy();
+  }
 
-  new Chart(canvas, {
+  chartPersonasPorLider = new Chart(canvas, {
     type: "bar",
     data: {
       labels,
@@ -200,7 +204,7 @@ function renderGraficoVotan(datos, comuna) {
     const personas = Array.isArray(lider.personas) ? lider.personas : [];
     totalPersonas += personas.length;
     personas.forEach((p) => {
-      if (p.votaTeresa) totalVotan += 1;
+      if (p.votaTeresa) totalVotan++;
     });
   });
 
@@ -209,9 +213,11 @@ function renderGraficoVotan(datos, comuna) {
   const canvas = document.getElementById("chartVotanTeresa");
   if (!canvas || !window.Chart) return;
 
-  destruirChartSiExiste(canvas);
+  if (chartVotanTeresa) {
+    chartVotanTeresa.destroy();
+  }
 
-  new Chart(canvas, {
+  chartVotanTeresa = new Chart(canvas, {
     type: "doughnut",
     data: {
       labels: ["Votan por Teresa", "Sin compromiso"],
