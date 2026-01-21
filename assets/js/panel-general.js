@@ -43,6 +43,7 @@ function pgConstruirResumenPorComuna() {
   const compromisos = pgCargarCompromisos();
   const mapa = {};
 
+  // líderes/personas
   Object.keys(datos).forEach((comuna) => {
     const comunaData = datos[comuna] || { lideres: [] };
     const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
@@ -62,6 +63,7 @@ function pgConstruirResumenPorComuna() {
     });
   });
 
+  // compromisos
   compromisos.forEach((c) => {
     const comuna = (c.comuna || "").toString().trim();
     if (!comuna) return;
@@ -90,7 +92,6 @@ function pgConstruirResumenPorComuna() {
 function pgRenderTablaYResumen(mapa) {
   const tbody = document.getElementById("pg-tbody-comunas");
   if (!tbody) return;
-
   tbody.innerHTML = "";
 
   const comunas = Object.keys(mapa).sort();
@@ -100,6 +101,7 @@ function pgRenderTablaYResumen(mapa) {
 
   comunas.forEach((comuna) => {
     const info = mapa[comuna];
+
     totalLideres += info.lideres;
     totalPersonas += info.personas;
     totalCompromisos += info.compromisosTotal;
@@ -136,8 +138,15 @@ function pgRenderGraficoPersonas(mapa) {
 
   new Chart(canvas, {
     type: "bar",
-    data: { labels: comunas, datasets: [{ label: "Personas vinculadas", data: valores, borderWidth: 1 }] },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, precision: 0 } }, maintainAspectRatio: true }
+    data: {
+      labels: comunas,
+      datasets: [{ label: "Personas vinculadas", data: valores, borderWidth: 1 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, precision: 0 } },
+      maintainAspectRatio: true
+    }
   });
 }
 
@@ -150,8 +159,15 @@ function pgRenderGraficoCompromisos(mapa) {
 
   new Chart(canvas, {
     type: "bar",
-    data: { labels: comunas, datasets: [{ label: "Compromisos", data: valores, borderWidth: 1 }] },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, precision: 0 } }, maintainAspectRatio: true }
+    data: {
+      labels: comunas,
+      datasets: [{ label: "Compromisos", data: valores, borderWidth: 1 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, precision: 0 } },
+      maintainAspectRatio: true
+    }
   });
 }
 
@@ -170,7 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (noSessionSection) noSessionSection.style.display = "none";
 
   const mapa = pgConstruirResumenPorComuna();
-
   pgRenderTablaYResumen(mapa);
   pgRenderGraficoPersonas(mapa);
   pgRenderGraficoCompromisos(mapa);
