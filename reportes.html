@@ -71,7 +71,7 @@
         </div>
       </section>
 
-      <!-- COMPROMISOS -->
+      <!-- COMPROMISOS (NÚMEROS + GRÁFICO) -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Compromisos de la comuna</h3>
         <p class="small-text">
@@ -131,8 +131,62 @@
 
   <!-- Librería de gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lógica -->
+  <!-- Lógica de reportes (líderes / personas) -->
   <script src="assets/js/reportes.js"></script>
   <script src="assets/js/menu.js"></script>
+
+  <!-- LÓGICA SOLO PARA COMPROMISOS (UN SOLO CHART) -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        const sesionRaw = localStorage.getItem("pasto_sesion");
+        if (!sesionRaw) return;
+        const sesion = JSON.parse(sesionRaw);
+        if (!sesion || !sesion.comuna) return;
+
+        const comuna = sesion.comuna;
+
+        let compromisos = JSON.parse(localStorage.getItem("pasto_compromisos") || "[]");
+        if (!Array.isArray(compromisos)) compromisos = [];
+
+        const lista = compromisos.filter(c => c.comuna === comuna);
+
+        const total = lista.length;
+        const pendientes = lista.filter(c => c.estado === "pendiente").length;
+        const gestion = lista.filter(c => c.estado === "gestion").length;
+        const cumplidos = lista.filter(c => c.estado === "cumplido").length;
+
+        const set = (id, v) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = String(v);
+        };
+
+        set("rep-comp-total", total);
+        set("rep-comp-pendientes", pendientes);
+        set("rep-comp-gestion", gestion);
+        set("rep-comp-cumplidos", cumplidos);
+
+        const canvas = document.getElementById("chartCompromisos");
+        if (canvas && window.Chart) {
+          new Chart(canvas, {
+            type: "doughnut",
+            data: {
+              labels: ["Pendientes", "En gestión", "Cumplidos"],
+              datasets: [{
+                data: [pendientes, gestion, cumplidos],
+                backgroundColor: ["#fbbf24", "#38bdf8", "#22c55e"]
+              }]
+            },
+            options: {
+              plugins: { legend: { position: "bottom" } },
+              maintainAspectRatio: true
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Error al cargar compromisos en reportes:", e);
+      }
+    });
+  </script>
 </body>
 </html>
