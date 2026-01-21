@@ -18,16 +18,17 @@
   <div class="app-container">
     <header class="app-header">
       <h1>Agenda de la comuna</h1>
-      <p class="app-subtitle">Reuniones ordenadas por fecha y estado.</p>
+      <p class="app-subtitle">Reuniones organizadas por Hoy, Próximas y Pasadas.</p>
     </header>
 
-    <!-- GUARD: si no hay sesión / permisos -->
+    <!-- SIN SESIÓN -->
     <section id="no-session-section" class="card" style="display:none;">
       <h2>Sesión no encontrada</h2>
       <p class="small-text">Debes iniciar sesión para ver la agenda.</p>
       <a href="index.html" class="btn-primary">Ir al inicio</a>
     </section>
 
+    <!-- AGENDA -->
     <section id="agenda-section" class="card" style="display:none;">
       <div class="comuna-header">
         <div>
@@ -36,7 +37,7 @@
         </div>
       </div>
 
-      <!-- Resumen -->
+      <!-- RESUMEN -->
       <section class="subcard">
         <h3>Resumen</h3>
         <div class="resumen-grid">
@@ -59,7 +60,7 @@
         </div>
       </section>
 
-      <!-- Filtros -->
+      <!-- FILTROS -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Filtros</h3>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -76,13 +77,33 @@
         </div>
       </section>
 
-      <!-- Lista -->
+      <!-- SECCIÓN HOY -->
       <section class="subcard" style="margin-top:16px;">
-        <h3>Reuniones</h3>
-        <div id="agenda-list" style="display:flex; flex-direction:column; gap:12px;">
-          <!-- tarjetas por JS -->
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0;">Hoy</h3>
+          <span class="small-text">Total: <strong id="ag-count-hoy">0</strong></span>
         </div>
+        <div id="agenda-list-hoy" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
       </section>
+
+      <!-- SECCIÓN PRÓXIMAS -->
+      <section class="subcard" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0;">Próximas</h3>
+          <span class="small-text">Total: <strong id="ag-count-proximas">0</strong></span>
+        </div>
+        <div id="agenda-list-proximas" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
+      </section>
+
+      <!-- SECCIÓN PASADAS -->
+      <section class="subcard" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0;">Pasadas</h3>
+          <span class="small-text">Total: <strong id="ag-count-pasadas">0</strong></span>
+        </div>
+        <div id="agenda-list-pasadas" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
+      </section>
+
     </section>
   </div>
 
