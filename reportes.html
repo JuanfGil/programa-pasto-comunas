@@ -26,7 +26,7 @@
     <header class="app-header">
       <h1>Reportes de la comuna</h1>
       <p class="app-subtitle">
-        Visualización de líderes, personas vinculadas y compromiso de voto.
+        Visualización de líderes, personas vinculadas, compromisos y compromiso de voto.
       </p>
     </header>
 
@@ -67,6 +67,39 @@
           <div class="resumen-item">
             <span class="resumen-label">Sin compromiso</span>
             <span id="rep-total-no-votan" class="resumen-value">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPROMISOS -->
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Compromisos de la comuna</h3>
+        <p class="small-text">
+          Estado de los compromisos asumidos con esta comuna.
+        </p>
+
+        <div class="resumen-grid" style="margin-top:8px;">
+          <div class="resumen-item">
+            <span class="resumen-label">Total compromisos</span>
+            <span id="rep-comp-total" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Pendientes</span>
+            <span id="rep-comp-pendientes" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">En gestión</span>
+            <span id="rep-comp-gestion" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Cumplidos</span>
+            <span id="rep-comp-cumplidos" class="resumen-value">0</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; text-align:center;">
+          <div style="max-width:340px; margin:0 auto;">
+            <canvas id="chartCompromisos"></canvas>
           </div>
         </div>
       </section>
