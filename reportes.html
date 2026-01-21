@@ -39,7 +39,7 @@
       <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
     </section>
 
-    <!-- CON SESIÓN / COMUNA ACTIVA -->
+    <!-- CON SESIÓN -->
     <section id="reportes-section" class="card" style="display:none;">
       <div class="comuna-header">
         <div>
@@ -71,7 +71,7 @@
         </div>
       </section>
 
-      <!-- NUEVO: COMPROMISOS -->
+      <!-- COMPROMISOS -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Compromisos de la comuna</h3>
         <p class="small-text">
@@ -97,27 +97,33 @@
           </div>
         </div>
 
-        <div style="margin-top:12px;">
-          <canvas id="chartCompromisos" height="140"></canvas>
+        <div style="margin-top:12px; text-align:center;">
+          <div style="max-width:340px; margin:0 auto;">
+            <canvas id="chartCompromisos"></canvas>
+          </div>
         </div>
       </section>
 
-      <!-- GRÁFICOS: PERSONAS POR LÍDER -->
+      <!-- PERSONAS POR LÍDER -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Personas vinculadas por líder</h3>
         <p class="small-text">
           Cada barra representa cuántas personas ha vinculado cada líder en esta comuna.
         </p>
-        <canvas id="chartPersonasPorLider" height="150"></canvas>
+        <div style="max-width:340px; margin:0 auto;">
+          <canvas id="chartPersonasPorLider"></canvas>
+        </div>
       </section>
 
-      <!-- GRÁFICO: COMPROMISO DE VOTO -->
+      <!-- COMPROMISO DE VOTO -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Compromiso de voto</h3>
         <p class="small-text">
           Comparación entre personas que se comprometen a votar por Teresa y las que aún no.
         </p>
-        <canvas id="chartVotanTeresa" height="140"></canvas>
+        <div style="max-width:340px; margin:0 auto;">
+          <canvas id="chartVotanTeresa"></canvas>
+        </div>
       </section>
     </section>
 
@@ -125,78 +131,50 @@
 
   <!-- Librería de gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lógica específica de reportes (ya existente) -->
   <script src="assets/js/reportes.js"></script>
   <script src="assets/js/menu.js"></script>
 
-  <!-- Lógica extra SOLO para compromisos en reportes -->
+  <!-- SCRIPT DE COMPROMISOS -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Cargar sesión para saber la comuna actual
       let sesionRaw = localStorage.getItem("pasto_sesion");
       if (!sesionRaw) return;
+      let sesion = JSON.parse(sesionRaw || "{}");
+      if (!sesion.comuna) return;
 
-      let sesion;
-      try {
-        sesion = JSON.parse(sesionRaw);
-      } catch (e) {
-        console.warn("No se pudo leer la sesión en reportes (compromisos).");
-        return;
-      }
-
-      if (!sesion || !sesion.comuna) return;
-      const comuna = sesion.comuna;
-
-      // Cargar compromisos desde localStorage
       let compromisosRaw = localStorage.getItem("pasto_compromisos");
-      let compromisos = [];
-      try {
-        compromisos = JSON.parse(compromisosRaw || "[]");
-        if (!Array.isArray(compromisos)) compromisos = [];
-      } catch (e) {
-        compromisos = [];
-      }
+      let compromisos = JSON.parse(compromisosRaw || "[]");
+      let lista = compromisos.filter(c => c.comuna === sesion.comuna);
 
-      const lista = compromisos.filter(c => c.comuna === comuna);
+      let total = lista.length;
+      let pendientes = lista.filter(c => c.estado === "pendiente").length;
+      let gestion = lista.filter(c => c.estado === "gestion").length;
+      let cumplidos = lista.filter(c => c.estado === "cumplido").length;
 
-      const total = lista.length;
-      const pendientes = lista.filter(c => c.estado === "pendiente").length;
-      const gestion = lista.filter(c => c.estado === "gestion").length;
-      const cumplidos = lista.filter(c => c.estado === "cumplido").length;
+      const set = (id,val)=>{ let el=document.getElementById(id); if(el) el.textContent = val; };
+      set("rep-comp-total", total);
+      set("rep-comp-pendientes", pendientes);
+      set("rep-comp-gestion", gestion);
+      set("rep-comp-cumplidos", cumplidos);
 
-      const setText = (id, valor) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = valor;
-      };
-
-      setText("rep-comp-total", total);
-      setText("rep-comp-pendientes", pendientes);
-      setText("rep-comp-gestion", gestion);
-      setText("rep-comp-cumplidos", cumplidos);
-
-      // Crear gráfico de compromisos si hay datos y Chart.js está disponible
-      const canvas = document.getElementById("chartCompromisos");
-      if (canvas && window.Chart) {
-        new Chart(canvas, {
+      if (window.Chart) {
+        new Chart(document.getElementById("chartCompromisos"), {
           type: "doughnut",
           data: {
-            labels: ["Pendientes", "En gestión", "Cumplidos"],
+            labels: ["Pendientes","En gestión","Cumplidos"],
             datasets: [{
               data: [pendientes, gestion, cumplidos],
-              backgroundColor: ["#fbbf24", "#38bdf8", "#22c55e"]
+              backgroundColor: ["#fbbf24","#38bdf8","#22c55e"]
             }]
           },
           options: {
-            plugins: {
-              legend: {
-                position: "bottom",
-                labels: { font: { size: 12 } }
-              }
-            }
+            plugins:{ legend:{ position:"bottom" } },
+            maintainAspectRatio:true
           }
         });
       }
     });
   </script>
+
 </body>
 </html>
