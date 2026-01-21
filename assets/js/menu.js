@@ -3,17 +3,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.getElementById("sidebar");
   const nav = document.querySelector(".sidebar-nav");
 
-  // Si no existe menú en esta página, no hacemos nada
   if (!toggleBtn || !sidebar || !nav) return;
 
-  // 🔥 Menú único para TODAS las páginas
-  nav.innerHTML = `
+  // Leer sesión
+  let sesion = null;
+  try {
+    sesion = JSON.parse(localStorage.getItem("pasto_sesion") || "null");
+  } catch (e) {
+    sesion = null;
+  }
+
+  const rol = (sesion && sesion.rol ? sesion.rol : "dinamizador").toLowerCase();
+
+  // Menú base
+  let menuHTML = `
     <a href="index.html">Captura</a>
     <a href="reportes.html">Reportes</a>
     <a href="reuniones.html">Reuniones</a>
     <a href="compromisos.html">Compromisos</a>
-    <a href="panel-general.html">Panel general</a>
   `;
+
+  // Panel general solo para roles admin/gerencia/coordinador
+  if (rol === "admin" || rol === "gerencia" || rol === "coordinador") {
+    menuHTML += `<a href="panel-general.html">Panel general</a>`;
+  }
+
+  nav.innerHTML = menuHTML;
 
   // Toggle abrir/cerrar
   toggleBtn.addEventListener("click", () => {
