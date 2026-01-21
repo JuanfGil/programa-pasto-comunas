@@ -12,8 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
         (u) => u.username === username && u.password === password
       );
 
-      // Solo intercepta admin/gerencia/coordinador
-      if (user && (user.rol === "admin" || user.rol === "gerencia" || user.rol === "coordinador")) {
+      if (!user) return;
+
+      // Si es admin/gerencia/coordinador: guardamos sesión, pero NO redirigimos
+      if (user.rol === "admin" || user.rol === "gerencia" || user.rol === "coordinador") {
         e.preventDefault();
         e.stopPropagation();
 
@@ -23,9 +25,10 @@ document.addEventListener("DOMContentLoaded", () => {
           comuna: user.comuna
         });
 
-        window.location.href = "panel-general.html";
+        // Recargar para que tu app.js muestre la vista y el menú cambie por rol
+        window.location.reload();
       }
     },
-    true // captura: corre antes que el listener del app.js
+    true
   );
 });
