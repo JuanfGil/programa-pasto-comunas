@@ -1,21 +1,12 @@
-/* ========================================================
+/* ============================
    CONFIGURACIÓN
-======================================================== */
+============================ */
 const LS_SESION_KEY = "pasto_sesion";
 const LS_DATOS_KEY = "pasto_datos";
 
-/* ========================================================
-   REGISTRO GLOBAL PARA GRÁFICOS (FIX)
-======================================================== */
-const chartInstances = {
-  personasPorLider: null,
-  votan: null,
-  compromisos: null,
-};
-
-/* ========================================================
-   LOCAL STORAGE HELPERS
-======================================================== */
+/* ============================
+   HELPERS LOCALSTORAGE
+============================ */
 function cargarSesionReportes() {
   try {
     const raw = localStorage.getItem(LS_SESION_KEY);
@@ -32,15 +23,32 @@ function cargarDatosReportes() {
   try {
     const raw = localStorage.getItem(LS_DATOS_KEY);
     if (!raw) return {};
-    return JSON.parse(raw) || {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
   }
 }
 
-/* ========================================================
-   RENDER RESUMEN GENERAL
-======================================================== */
+/* ============================
+   FUNCIONES DE APOYO
+============================ */
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = String(val);
+}
+
+// Destruye cualquier gráfico existente en ese canvas
+function destruirChartSiExiste(canvas) {
+  if (!window.Chart) return;
+  // Chart.getChart existe en Chart.js 3+
+  const existing = Chart.getChart(canvas);
+  if (existing) existing.destroy();
+}
+
+/* ============================
+   RESUMEN GENERAL (LÍDERES / PERSONAS)
+============================ */
 function renderResumenComuna(datos, comuna, sesion) {
   const reportesSection = document.getElementById("reportes-section");
   const noSessionSection = document.getElementById("no-session-section");
@@ -60,63 +68,58 @@ function renderResumenComuna(datos, comuna, sesion) {
   if (infoUsuario) infoUsuario.textContent = `Sesión activa como: ${sesion.username}`;
 
   const comunaData = datos[comuna] || { lideres: [] };
-  const lideres = comunaData.lideres || [];
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
 
   let totalLideres = lideres.length;
   let totalPersonas = 0;
   let totalVotan = 0;
 
   lideres.forEach((lider) => {
-    const personas = lider.personas || [];
+    const personas = Array.isArray(lider.personas) ? lider.personas : [];
     totalPersonas += personas.length;
     personas.forEach((p) => {
-      if (p.votaTeresa) totalVotan++;
+      if (p.votaTeresa) totalVotan += 1;
     });
   });
 
   const totalNoVotan = totalPersonas - totalVotan;
 
-  const set = (id, v) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = v;
-  };
-
-  set("rep-total-lideres", totalLideres);
-  set("rep-total-personas", totalPersonas);
-  set("rep-total-votan", totalVotan);
-  set("rep-total-no-votan", totalNoVotan);
+  setText("rep-total-lideres", totalLideres);
+  setText("rep-total-personas", totalPersonas);
+  setText("rep-total-votan", totalVotan);
+  setText("rep-total-no-votan", totalNoVotan);
 }
 
-/* ========================================================
-   RENDER COMPROMISOS
-======================================================== */
+/* ============================
+   COMPROMISOS
+============================ */
 function renderCompromisosResumen(comuna) {
-  let arr = JSON.parse(localStorage.getItem("pasto_compromisos") || "[]");
-  if (!Array.isArray(arr)) arr = [];
+  let compromisos = [];
+  try {
+    compromisos = JSON.parse(localStorage.getItem("pasto_compromisos") || "[]");
+    if (!Array.isArray(compromisos)) compromisos = [];
+  } catch {
+    compromisos = [];
+  }
 
-  arr = arr.filter((c) => c.comuna === comuna);
+  const lista = compromisos.filter((c) => c.comuna === comuna);
 
-  const total = arr.length;
-  const pendientes = arr.filter((c) => c.estado === "pendiente").length;
-  const gestion = arr.filter((c) => c.estado === "gestion").length;
-  const cumplidos = arr.filter((c) => c.estado === "cumplido").length;
+  const total = lista.length;
+  const pendientes = lista.filter((c) => c.estado === "pendiente").length;
+  const gestion = lista.filter((c) => c.estado === "gestion").length;
+  const cumplidos = lista.filter((c) => c.estado === "cumplido").length;
 
-  const set = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  };
-
-  set("rep-comp-total", total);
-  set("rep-comp-pendientes", pendientes);
-  set("rep-comp-gestion", gestion);
-  set("rep-comp-cumplidos", cumplidos);
+  setText("rep-comp-total", total);
+  setText("rep-comp-pendientes", pendientes);
+  setText("rep-comp-gestion", gestion);
+  setText("rep-comp-cumplidos", cumplidos);
 
   const canvas = document.getElementById("chartCompromisos");
   if (!canvas || !window.Chart) return;
 
-  if (chartInstances.compromisos) chartInstances.compromisos.destroy();
+  destruirChartSiExiste(canvas);
 
-  chartInstances.compromisos = new Chart(canvas, {
+  new Chart(canvas, {
     type: "doughnut",
     data: {
       labels: ["Pendientes", "En gestión", "Cumplidos"],
@@ -128,86 +131,117 @@ function renderCompromisosResumen(comuna) {
       ],
     },
     options: {
-      plugins: { legend: { position: "bottom" } },
+      plugins: {
+        legend: { position: "bottom" },
+      },
       maintainAspectRatio: true,
     },
   });
 }
 
-/* ========================================================
+/* ============================
    GRÁFICO PERSONAS POR LÍDER
-======================================================== */
+============================ */
 function renderGraficoPersonasPorLider(datos, comuna) {
   const comunaData = datos[comuna] || { lideres: [] };
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
+
   const labels = [];
   const valores = [];
 
-  comunaData.lideres.forEach((l) => {
-    labels.push(l.nombre || "Líder");
-    valores.push((l.personas || []).length);
+  lideres.forEach((lider) => {
+    labels.push(lider.nombre || `Líder ${lider.id || ""}`);
+    const personas = Array.isArray(lider.personas) ? lider.personas : [];
+    valores.push(personas.length);
   });
 
   const canvas = document.getElementById("chartPersonasPorLider");
   if (!canvas || !window.Chart) return;
 
-  if (chartInstances.personasPorLider) chartInstances.personasPorLider.destroy();
+  destruirChartSiExiste(canvas);
 
-  chartInstances.personasPorLider = new Chart(canvas, {
+  new Chart(canvas, {
     type: "bar",
     data: {
       labels,
-      datasets: [{ data: valores, borderWidth: 1 }],
+      datasets: [
+        {
+          data: valores,
+          borderWidth: 1,
+        },
+      ],
     },
     options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, precision: 0 } },
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          precision: 0,
+        },
+      },
       maintainAspectRatio: true,
     },
   });
 }
 
-/* ========================================================
+/* ============================
    GRÁFICO COMPROMISO DE VOTO
-======================================================== */
+============================ */
 function renderGraficoVotan(datos, comuna) {
   const comunaData = datos[comuna] || { lideres: [] };
-  let total = 0;
-  let votan = 0;
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
 
-  comunaData.lideres.forEach((l) => {
-    const personas = l.personas || [];
-    total += personas.length;
-    personas.forEach((p) => { if (p.votaTeresa) votan++; });
+  let totalPersonas = 0;
+  let totalVotan = 0;
+
+  lideres.forEach((lider) => {
+    const personas = Array.isArray(lider.personas) ? lider.personas : [];
+    totalPersonas += personas.length;
+    personas.forEach((p) => {
+      if (p.votaTeresa) totalVotan += 1;
+    });
   });
 
-  const noVotan = total - votan;
+  const totalNoVotan = totalPersonas - totalVotan;
 
   const canvas = document.getElementById("chartVotanTeresa");
   if (!canvas || !window.Chart) return;
 
-  if (chartInstances.votan) chartInstances.votan.destroy();
+  destruirChartSiExiste(canvas);
 
-  chartInstances.votan = new Chart(canvas, {
+  new Chart(canvas, {
     type: "doughnut",
     data: {
       labels: ["Votan por Teresa", "Sin compromiso"],
-      datasets: [{ data: [votan, noVotan], backgroundColor: ["#22c55e", "#e5e7eb"] }],
+      datasets: [
+        {
+          data: [totalVotan, totalNoVotan],
+          backgroundColor: ["#22c55e", "#e5e7eb"],
+        },
+      ],
     },
     options: {
-      plugins: { legend: { position: "bottom" } },
+      plugins: {
+        legend: { position: "bottom" },
+      },
       maintainAspectRatio: true,
     },
   });
 }
 
-/* ========================================================
+/* ============================
    INIT
-======================================================== */
+============================ */
 document.addEventListener("DOMContentLoaded", () => {
   const sesion = cargarSesionReportes();
+  const reportesSection = document.getElementById("reportes-section");
+  const noSessionSection = document.getElementById("no-session-section");
+
   if (!sesion) {
-    document.getElementById("reportes-section").style.display = "none";
-    document.getElementById("no-session-section").style.display = "block";
+    if (reportesSection) reportesSection.style.display = "none";
+    if (noSessionSection) noSessionSection.style.display = "block";
     return;
   }
 
