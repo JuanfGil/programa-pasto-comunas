@@ -1,32 +1,13 @@
-// Mismas claves usadas en app.js
-const LS_LIDERES_KEY = "pasto_lideres";
-const LS_PERSONAS_KEY = "pasto_personas";
+// ================================
+// CONFIGURACIÓN
+// ================================
 const LS_SESION_KEY = "pasto_sesion";
+const LS_DATOS_KEY = "pasto_datos";
 
-let lideres = [];
-let personas = [];
-let comunaActual = null;
-let usuarioActual = null;
-
-// Charts
-let chartPersonasPorLider = null;
-let chartVotanTeresa = null;
-
-// ====== CARGA DE DATOS ====== //
-function cargarDatos() {
-  try {
-    const l = JSON.parse(localStorage.getItem(LS_LIDERES_KEY) || "[]");
-    const p = JSON.parse(localStorage.getItem(LS_PERSONAS_KEY) || "[]");
-    if (Array.isArray(l)) lideres = l;
-    if (Array.isArray(p)) personas = p;
-  } catch (e) {
-    console.warn("Error al cargar datos de localStorage en reportes:", e);
-    lideres = [];
-    personas = [];
-  }
-}
-
-function cargarSesion() {
+// ================================
+// UTILIDADES LOCALSTORAGE
+// ================================
+function cargarSesionReportes() {
   try {
     const raw = localStorage.getItem(LS_SESION_KEY);
     if (!raw) return null;
@@ -39,234 +20,242 @@ function cargarSesion() {
   }
 }
 
-// ====== INICIALIZACIÓN DE LA PÁGINA DE REPORTES ====== //
-document.addEventListener("DOMContentLoaded", () => {
-  const noSessionSection = document.getElementById("no-session-section");
-  const reportesSection = document.getElementById("reportes-section");
+function cargarDatosReportes() {
+  try {
+    const raw = localStorage.getItem(LS_DATOS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed;
+  } catch (e) {
+    console.warn("Error al cargar datos en reportes:", e);
+    return {};
+  }
+}
 
-  const sesion = cargarSesion();
+// ================================
+// RENDER DE RESÚMENES
+// ================================
+function renderResumenComuna(datos, comuna, sesion) {
+  const reportesSection = document.getElementById("reportes-section");
+  const noSessionSection = document.getElementById("no-session-section");
+  const titulo = document.getElementById("rep-comuna-title");
+  const infoUsuario = document.getElementById("rep-user-info");
+
   if (!sesion) {
-    noSessionSection.style.display = "block";
-    reportesSection.style.display = "none";
+    if (reportesSection) reportesSection.style.display = "none";
+    if (noSessionSection) noSessionSection.style.display = "block";
     return;
   }
 
-  usuarioActual = sesion.username;
-  comunaActual = sesion.comuna;
+  // Mostrar sección de reportes
+  if (reportesSection) reportesSection.style.display = "block";
+  if (noSessionSection) noSessionSection.style.display = "none";
 
-  cargarDatos();
+  if (titulo) titulo.textContent = comuna;
+  if (infoUsuario) {
+    infoUsuario.textContent = `Sesión activa como: ${sesion.username}`;
+  }
 
-  const lideresComuna = lideres.filter((l) => l.comuna === comunaActual);
-  const personasComuna = personas.filter((p) => p.comuna === comunaActual);
+  const comunaData = datos[comuna] || { lideres: [] };
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
 
-  noSessionSection.style.display = "none";
-  reportesSection.style.display = "block";
+  let totalLideres = lideres.length;
+  let totalPersonas = 0;
+  let totalVotan = 0;
 
-  const repComunaTitle = document.getElementById("rep-comuna-title");
-  const repUserInfo = document.getElementById("rep-user-info");
-  const repTotalLideres = document.getElementById("rep-total-lideres");
-  const repTotalPersonas = document.getElementById("rep-total-personas");
-  const repTotalVotan = document.getElementById("rep-total-votan");
-  const repTotalNoVotan = document.getElementById("rep-total-no-votan");
-  const btnExportarCsv = document.getElementById("btn-exportar-csv");
+  lideres.forEach((lider) => {
+    const personas = Array.isArray(lider.personas) ? lider.personas : [];
+    totalPersonas += personas.length;
+    personas.forEach((p) => {
+      if (p.votaTeresa) totalVotan += 1;
+    });
+  });
 
-  repComunaTitle.textContent = comunaActual;
-  repUserInfo.textContent = `Sesión activa como: ${usuarioActual}`;
-
-  const totalLideres = lideresComuna.length;
-  const totalPersonas = personasComuna.length;
-  const totalVotan = personasComuna.filter((p) => p.votaTeresa).length;
   const totalNoVotan = totalPersonas - totalVotan;
 
-  repTotalLideres.textContent = totalLideres;
-  repTotalPersonas.textContent = totalPersonas;
-  repTotalVotan.textContent = totalVotan;
-  repTotalNoVotan.textContent = totalNoVotan;
-
-  // Botón descargar CSV
-  if (btnExportarCsv) {
-    btnExportarCsv.addEventListener("click", () => {
-      exportarCsvComuna(lideresComuna, personasComuna);
-    });
-  }
-
-  inicializarGraficos(lideresComuna, personasComuna);
-});
-
-// ====== GRÁFICOS ====== //
-function inicializarGraficos(lideresComuna, personasComuna) {
-  if (typeof Chart === "undefined") {
-    console.warn("Chart.js no está disponible en reportes.");
-    return;
-  }
-
-  const canvasPersonasPorLider = document.getElementById("chartPersonasPorLider");
-  const canvasVotanTeresa = document.getElementById("chartVotanTeresa");
-
-  if (!canvasPersonasPorLider || !canvasVotanTeresa) {
-    console.warn("No se encontraron los canvas de gráficos en reportes.");
-    return;
-  }
-
-  // --- Gráfico de barras: personas por líder --- //
-  const labelsLideres = lideresComuna.map((l) => l.nombre);
-  const datosPersonasPorLider = lideresComuna.map((l) =>
-    personasComuna.filter((p) => p.liderId === l.id).length
-  );
-
-  const dataBar = {
-    labels: labelsLideres,
-    datasets: [
-      {
-        label: "Personas vinculadas",
-        data: datosPersonasPorLider,
-      },
-    ],
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(val);
   };
 
-  const configBar = {
-    type: "bar",
-    data: dataBar,
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true },
+  setText("rep-total-lideres", totalLideres);
+  setText("rep-total-personas", totalPersonas);
+  setText("rep-total-votan", totalVotan);
+  setText("rep-total-no-votan", totalNoVotan);
+}
+
+// ================================
+// COMPROMISOS (ya usados en reportes.html)
+// ================================
+function renderCompromisosResumen(comuna) {
+  let compromisosRaw = localStorage.getItem("pasto_compromisos");
+  let compromisos = [];
+  try {
+    compromisos = JSON.parse(compromisosRaw || "[]");
+    if (!Array.isArray(compromisos)) compromisos = [];
+  } catch (e) {
+    compromisos = [];
+  }
+
+  const lista = compromisos.filter((c) => c.comuna === comuna);
+  const total = lista.length;
+  const pendientes = lista.filter((c) => c.estado === "pendiente").length;
+  const gestion = lista.filter((c) => c.estado === "gestion").length;
+  const cumplidos = lista.filter((c) => c.estado === "cumplido").length;
+
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(val);
+  };
+
+  setText("rep-comp-total", total);
+  setText("rep-comp-pendientes", pendientes);
+  setText("rep-comp-gestion", gestion);
+  setText("rep-comp-cumplidos", cumplidos);
+
+  const canvas = document.getElementById("chartCompromisos");
+  if (canvas && window.Chart) {
+    new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: ["Pendientes", "En gestión", "Cumplidos"],
+        datasets: [
+          {
+            data: [pendientes, gestion, cumplidos],
+            backgroundColor: ["#fbbf24", "#38bdf8", "#22c55e"],
+          },
+        ],
       },
-      scales: {
-        x: {
-          ticks: {
-            autoSkip: true,
-            maxRotation: 45,
-            minRotation: 0,
+      options: {
+        plugins: {
+          legend: {
+            position: "bottom",
           },
         },
+        maintainAspectRatio: true,
+      },
+    });
+  }
+}
+
+// ================================
+// GRÁFICOS PERSONAS POR LÍDER
+// ================================
+function renderGraficoPersonasPorLider(datos, comuna) {
+  const comunaData = datos[comuna] || { lideres: [] };
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
+
+  const labels = [];
+  const valores = [];
+
+  lideres.forEach((lider) => {
+    const personas = Array.isArray(lider.personas) ? lider.personas : [];
+    labels.push(lider.nombre || `Líder ${lider.id || ""}`);
+    valores.push(personas.length);
+  });
+
+  const canvas = document.getElementById("chartPersonasPorLider");
+  if (!canvas || !window.Chart) return;
+
+  new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Personas vinculadas",
+          data: valores,
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      scales: {
         y: {
           beginAtZero: true,
           precision: 0,
         },
       },
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+      maintainAspectRatio: true,
     },
-  };
+  });
+}
 
-  chartPersonasPorLider = new Chart(canvasPersonasPorLider, configBar);
+// ================================
+// GRÁFICO COMPROMISO DE VOTO
+// ================================
+function renderGraficoVotan(datos, comuna) {
+  const comunaData = datos[comuna] || { lideres: [] };
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
 
-  // --- Gráfico de pastel: votan vs no votan --- //
-  const totalPersonas = personasComuna.length;
-  const totalVotan = personasComuna.filter((p) => p.votaTeresa).length;
+  let totalPersonas = 0;
+  let totalVotan = 0;
+
+  lideres.forEach((lider) => {
+    const personas = Array.isArray(lider.personas) ? lider.personas : [];
+    totalPersonas += personas.length;
+    personas.forEach((p) => {
+      if (p.votaTeresa) totalVotan += 1;
+    });
+  });
+
   const totalNoVotan = totalPersonas - totalVotan;
 
-  const dataPie = {
-    labels: ["Votan por Teresa", "Sin compromiso"],
-    datasets: [
-      {
-        data: [totalVotan, totalNoVotan],
-      },
-    ],
-  };
+  const canvas = document.getElementById("chartVotanTeresa");
+  if (!canvas || !window.Chart) return;
 
-  const configPie = {
-    type: "pie",
-    data: dataPie,
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: "bottom" },
-      },
+  new Chart(canvas, {
+    type: "doughnut",
+    data: {
+      labels: ["Votan por Teresa", "Sin compromiso"],
+      datasets: [
+        {
+          data: [totalVotan, totalNoVotan],
+          backgroundColor: ["#22c55e", "#e5e7eb"],
+        },
+      ],
     },
-  };
-
-  chartVotanTeresa = new Chart(canvasVotanTeresa, configPie);
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom",
+        },
+      },
+      maintainAspectRatio: true,
+    },
+  });
 }
 
-// ====== EXPORTAR CSV ====== //
-function escapeCsv(value) {
-  if (value === null || value === undefined) return "";
-  const str = String(value).replace(/"/g, '""');
-  return `"${str}"`;
-}
+// ================================
+// INICIO
+// ================================
+document.addEventListener("DOMContentLoaded", () => {
+  const sesion = cargarSesionReportes();
 
-function exportarCsvComuna(lideresComuna, personasComuna) {
-  if (!comunaActual) {
-    alert("No hay comuna activa para exportar.");
+  if (!sesion) {
+    const reportesSection = document.getElementById("reportes-section");
+    const noSessionSection = document.getElementById("no-session-section");
+    if (reportesSection) reportesSection.style.display = "none";
+    if (noSessionSection) noSessionSection.style.display = "block";
     return;
   }
 
-  // Mapa rápido de líderes por id
-  const mapaLiderPorId = new Map();
-  lideresComuna.forEach((l) => mapaLiderPorId.set(l.id, l));
+  const comuna = sesion.comuna;
+  const datos = cargarDatosReportes();
 
-  const filas = [];
+  // Resumen general (líderes / personas / votan / no votan)
+  renderResumenComuna(datos, comuna, sesion);
 
-  // Encabezados
-  filas.push([
-    "Comuna",
-    "Tipo registro",
-    "Nombre",
-    "Documento",
-    "Teléfono",
-    "Dirección",
-    "Zona votación",
-    "Tipo líder",
-    "Líder responsable",
-    "Conoce líder",
-    "Vota Teresa",
-  ].map(escapeCsv).join(";"));
+  // Compromisos
+  renderCompromisosResumen(comuna);
 
-  // Líderes
-  lideresComuna.forEach((l) => {
-    const fila = [
-      comunaActual,
-      "Líder",
-      l.nombre || "",
-      l.documento || "",
-      l.telefono || "",
-      l.direccion || "",
-      l.zona || "",
-      l.tipo || "",
-      "",          // líder responsable (no aplica para líder)
-      "",          // conoce líder
-      "",          // vota Teresa
-    ];
-    filas.push(fila.map(escapeCsv).join(";"));
-  });
-
-  // Personas vinculadas
-  personasComuna.forEach((p) => {
-    const lider = mapaLiderPorId.get(p.liderId) || {};
-    const fila = [
-      comunaActual,
-      "Persona",
-      p.nombre || "",
-      p.documento || "",
-      p.telefono || "",
-      p.direccion || "",
-      p.zona || "",
-      lider.tipo || "",
-      lider.nombre || "",
-      p.conoceLider ? "Sí" : "No",
-      p.votaTeresa ? "Sí" : "No",
-    ];
-    filas.push(fila.map(escapeCsv).join(";"));
-  });
-
-  const contenido = filas.join("\r\n");
-  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
-
-  const nombreArchivoBase = comunaActual.replace(/\s+/g, "_").toLowerCase();
-  const nombreArchivo = `reporte_${nombreArchivoBase}.csv`;
-
-  if (navigator.msSaveBlob) {
-    // Para IE antiguo (por si acaso)
-    navigator.msSaveBlob(blob, nombreArchivo);
-  } else {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", nombreArchivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-}
+  // Gráficos
+  renderGraficoPersonasPorLider(datos, comuna);
+  renderGraficoVotan(datos, comuna);
+});
