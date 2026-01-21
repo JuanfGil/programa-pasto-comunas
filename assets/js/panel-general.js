@@ -1,27 +1,20 @@
-// ================================
-// CONFIGURACIÓN
-// ================================
-const PG_LS_SESION_KEY = "pasto_sesion";
-const PG_LS_DATOS_KEY = "pasto_datos";
-
-// ================================
-// HELPERS LOCALSTORAGE
-// ================================
-function pgCargarSesion() {
+function pgGetSesion() {
   try {
-    const raw = localStorage.getItem(PG_LS_SESION_KEY);
-    if (!raw) return null;
-    const sesion = JSON.parse(raw);
-    if (!sesion || !sesion.username) return null;
-    return sesion;
+    return JSON.parse(localStorage.getItem("pasto_sesion") || "null");
   } catch {
     return null;
   }
 }
 
+function pgRolValido(sesion) {
+  if (!sesion || !sesion.rol) return false;
+  const rol = sesion.rol.toLowerCase();
+  return rol === "admin" || rol === "gerencia" || rol === "coordinador";
+}
+
 function pgCargarDatos() {
   try {
-    const raw = localStorage.getItem(PG_LS_DATOS_KEY);
+    const raw = localStorage.getItem("pasto_datos");
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? parsed : {};
@@ -45,32 +38,17 @@ function pgSetText(id, value) {
   if (el) el.textContent = String(value);
 }
 
-// ================================
-// AGRUPAR INFORMACIÓN POR COMUNA
-// ================================
 function pgConstruirResumenPorComuna() {
   const datos = pgCargarDatos();
   const compromisos = pgCargarCompromisos();
+  const mapa = {};
 
-  // Mapa por comuna
-  const mapa = {}; // { comuna: { lideres, personas, votan, compromisosTotal, pend, gest, cump } }
-
-  // 1) Información de líderes / personas (pasto_datos)
   Object.keys(datos).forEach((comuna) => {
     const comunaData = datos[comuna] || { lideres: [] };
     const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
 
     if (!mapa[comuna]) {
-      mapa[comuna] = {
-        comuna,
-        lideres: 0,
-        personas: 0,
-        votan: 0,
-        compromisosTotal: 0,
-        pend: 0,
-        gest: 0,
-        cump: 0,
-      };
+      mapa[comuna] = { comuna, lideres: 0, personas: 0, votan: 0, compromisosTotal: 0, pend: 0, gest: 0, cump: 0 };
     }
 
     mapa[comuna].lideres += lideres.length;
@@ -84,25 +62,12 @@ function pgConstruirResumenPorComuna() {
     });
   });
 
-  // 2) Información de compromisos (pasto_compromisos)
   compromisos.forEach((c) => {
-    const comunaRaw = (c.comuna || "").toString().trim();
-    if (!comunaRaw) return;
-
-    const comuna = comunaRaw; // usamos tal cual lo guardaste
+    const comuna = (c.comuna || "").toString().trim();
+    if (!comuna) return;
 
     if (!mapa[comuna]) {
-      // comuna con compromisos pero sin líderes/personas todavía
-      mapa[comuna] = {
-        comuna,
-        lideres: 0,
-        personas: 0,
-        votan: 0,
-        compromisosTotal: 0,
-        pend: 0,
-        gest: 0,
-        cump: 0,
-      };
+      mapa[comuna] = { comuna, lideres: 0, personas: 0, votan: 0, compromisosTotal: 0, pend: 0, gest: 0, cump: 0 };
     }
 
     const est = (c.estado || "")
@@ -114,21 +79,14 @@ function pgConstruirResumenPorComuna() {
 
     mapa[comuna].compromisosTotal++;
 
-    if (est === "pendiente") {
-      mapa[comuna].pend++;
-    } else if (est === "gestion" || est === "en gestion") {
-      mapa[comuna].gest++;
-    } else if (est === "cumplido" || est === "cumplidos") {
-      mapa[comuna].cump++;
-    }
+    if (est === "pendiente") mapa[comuna].pend++;
+    else if (est === "gestion" || est === "en gestion") mapa[comuna].gest++;
+    else if (est === "cumplido" || est === "cumplidos") mapa[comuna].cump++;
   });
 
   return mapa;
 }
 
-// ================================
-// RENDER TABLA Y RESUMEN GLOBAL
-// ================================
 function pgRenderTablaYResumen(mapa) {
   const tbody = document.getElementById("pg-tbody-comunas");
   if (!tbody) return;
@@ -146,11 +104,9 @@ function pgRenderTablaYResumen(mapa) {
     totalPersonas += info.personas;
     totalCompromisos += info.compromisosTotal;
 
-    const porcentaje =
-      info.personas > 0 ? ((info.votan / info.personas) * 100).toFixed(1) + "%" : "0%";
+    const porcentaje = info.personas > 0 ? ((info.votan / info.personas) * 100).toFixed(1) + "%" : "0%";
 
     const tr = document.createElement("tr");
-
     tr.innerHTML = `
       <td>${info.comuna}</td>
       <td>${info.lideres}</td>
@@ -162,7 +118,6 @@ function pgRenderTablaYResumen(mapa) {
       <td>${info.gest}</td>
       <td>${info.cump}</td>
     `;
-
     tbody.appendChild(tr);
   });
 
@@ -172,9 +127,6 @@ function pgRenderTablaYResumen(mapa) {
   pgSetText("pg-total-compromisos", totalCompromisos);
 }
 
-// ================================
-// GRÁFICO: PERSONAS POR COMUNA
-// ================================
 function pgRenderGraficoPersonas(mapa) {
   const canvas = document.getElementById("pg-chart-personas");
   if (!canvas || !window.Chart) return;
@@ -184,34 +136,11 @@ function pgRenderGraficoPersonas(mapa) {
 
   new Chart(canvas, {
     type: "bar",
-    data: {
-      labels: comunas,
-      datasets: [
-        {
-          label: "Personas vinculadas",
-          data: valores,
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          precision: 0,
-        },
-      },
-      maintainAspectRatio: true,
-    },
+    data: { labels: comunas, datasets: [{ label: "Personas vinculadas", data: valores, borderWidth: 1 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, precision: 0 } }, maintainAspectRatio: true }
   });
 }
 
-// ================================
-// GRÁFICO: COMPROMISOS POR COMUNA
-// ================================
 function pgRenderGraficoCompromisos(mapa) {
   const canvas = document.getElementById("pg-chart-compromisos");
   if (!canvas || !window.Chart) return;
@@ -221,40 +150,17 @@ function pgRenderGraficoCompromisos(mapa) {
 
   new Chart(canvas, {
     type: "bar",
-    data: {
-      labels: comunas,
-      datasets: [
-        {
-          label: "Compromisos",
-          data: valores,
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          precision: 0,
-        },
-      },
-      maintainAspectRatio: true,
-    },
+    data: { labels: comunas, datasets: [{ label: "Compromisos", data: valores, borderWidth: 1 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, precision: 0 } }, maintainAspectRatio: true }
   });
 }
 
-// ================================
-// INIT
-// ================================
 document.addEventListener("DOMContentLoaded", () => {
-  const sesion = pgCargarSesion();
+  const sesion = pgGetSesion();
   const panelSection = document.getElementById("panel-section");
   const noSessionSection = document.getElementById("no-session-section");
 
-  if (!sesion) {
+  if (!pgRolValido(sesion)) {
     if (panelSection) panelSection.style.display = "none";
     if (noSessionSection) noSessionSection.style.display = "block";
     return;
