@@ -1,19 +1,12 @@
-/* ============================
-   CONFIGURACIÓN
-============================ */
+// ================================
+// CONFIGURACIÓN
+// ================================
 const LS_SESION_KEY = "pasto_sesion";
 const LS_DATOS_KEY = "pasto_datos";
 
-/* ============================
-   ESTADO DE GRÁFICOS
-============================ */
-let chartCompromisos = null;
-let chartPersonasPorLider = null;
-let chartVotanTeresa = null;
-
-/* ============================
-   HELPERS LOCALSTORAGE
-============================ */
+// ================================
+// HELPERS LOCALSTORAGE
+// ================================
 function cargarSesionReportes() {
   try {
     const raw = localStorage.getItem(LS_SESION_KEY);
@@ -37,17 +30,14 @@ function cargarDatosReportes() {
   }
 }
 
-/* ============================
-   HELPERS GENERALES
-============================ */
-function setText(id, val) {
+function setText(id, value) {
   const el = document.getElementById(id);
-  if (el) el.textContent = String(val);
+  if (el) el.textContent = String(value);
 }
 
-/* ============================
-   RESUMEN GENERAL
-============================ */
+// ================================
+// RESUMEN GENERAL
+// ================================
 function renderResumenComuna(datos, comuna, sesion) {
   const reportesSection = document.getElementById("reportes-section");
   const noSessionSection = document.getElementById("no-session-section");
@@ -89,61 +79,9 @@ function renderResumenComuna(datos, comuna, sesion) {
   setText("rep-total-no-votan", totalNoVotan);
 }
 
-/* ============================
-   COMPROMISOS
-============================ */
-function renderCompromisosResumen(comuna) {
-  let compromisos = [];
-  try {
-    compromisos = JSON.parse(localStorage.getItem("pasto_compromisos") || "[]");
-    if (!Array.isArray(compromisos)) compromisos = [];
-  } catch {
-    compromisos = [];
-  }
-
-  const lista = compromisos.filter((c) => c.comuna === comuna);
-
-  const total = lista.length;
-  const pendientes = lista.filter((c) => c.estado === "pendiente").length;
-  const gestion = lista.filter((c) => c.estado === "gestion").length;
-  const cumplidos = lista.filter((c) => c.estado === "cumplido").length;
-
-  setText("rep-comp-total", total);
-  setText("rep-comp-pendientes", pendientes);
-  setText("rep-comp-gestion", gestion);
-  setText("rep-comp-cumplidos", cumplidos);
-
-  const canvas = document.getElementById("chartCompromisos");
-  if (!canvas || !window.Chart) return;
-
-  // destruir gráfico previo si existe
-  if (chartCompromisos) {
-    chartCompromisos.destroy();
-  }
-
-  chartCompromisos = new Chart(canvas, {
-    type: "doughnut",
-    data: {
-      labels: ["Pendientes", "En gestión", "Cumplidos"],
-      datasets: [
-        {
-          data: [pendientes, gestion, cumplidos],
-          backgroundColor: ["#fbbf24", "#38bdf8", "#22c55e"],
-        },
-      ],
-    },
-    options: {
-      plugins: {
-        legend: { position: "bottom" },
-      },
-      maintainAspectRatio: true,
-    },
-  });
-}
-
-/* ============================
-   GRÁFICO PERSONAS POR LÍDER
-============================ */
+// ================================
+// GRÁFICO: PERSONAS POR LÍDER
+// ================================
 function renderGraficoPersonasPorLider(datos, comuna) {
   const comunaData = datos[comuna] || { lideres: [] };
   const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
@@ -160,39 +98,36 @@ function renderGraficoPersonasPorLider(datos, comuna) {
   const canvas = document.getElementById("chartPersonasPorLider");
   if (!canvas || !window.Chart) return;
 
-  if (chartPersonasPorLider) {
-    chartPersonasPorLider.destroy();
-  }
-
-  chartPersonasPorLider = new Chart(canvas, {
+  new Chart(canvas, {
     type: "bar",
     data: {
       labels,
       datasets: [
         {
+          label: "Personas vinculadas",
           data: valores,
-          borderWidth: 1,
-        },
-      ],
+          borderWidth: 1
+        }
+      ]
     },
     options: {
       plugins: {
-        legend: { display: false },
+        legend: { display: false }
       },
       scales: {
         y: {
           beginAtZero: true,
-          precision: 0,
-        },
+          precision: 0
+        }
       },
-      maintainAspectRatio: true,
-    },
+      maintainAspectRatio: true
+    }
   });
 }
 
-/* ============================
-   GRÁFICO COMPROMISO DE VOTO
-============================ */
+// ================================
+// GRÁFICO: COMPROMISO DE VOTO
+// ================================
 function renderGraficoVotan(datos, comuna) {
   const comunaData = datos[comuna] || { lideres: [] };
   const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
@@ -213,33 +148,29 @@ function renderGraficoVotan(datos, comuna) {
   const canvas = document.getElementById("chartVotanTeresa");
   if (!canvas || !window.Chart) return;
 
-  if (chartVotanTeresa) {
-    chartVotanTeresa.destroy();
-  }
-
-  chartVotanTeresa = new Chart(canvas, {
+  new Chart(canvas, {
     type: "doughnut",
     data: {
       labels: ["Votan por Teresa", "Sin compromiso"],
       datasets: [
         {
           data: [totalVotan, totalNoVotan],
-          backgroundColor: ["#22c55e", "#e5e7eb"],
-        },
-      ],
+          backgroundColor: ["#22c55e", "#e5e7eb"]
+        }
+      ]
     },
     options: {
       plugins: {
-        legend: { position: "bottom" },
+        legend: { position: "bottom" }
       },
-      maintainAspectRatio: true,
-    },
+      maintainAspectRatio: true
+    }
   });
 }
 
-/* ============================
-   INIT
-============================ */
+// ================================
+// INIT
+// ================================
 document.addEventListener("DOMContentLoaded", () => {
   const sesion = cargarSesionReportes();
   const reportesSection = document.getElementById("reportes-section");
@@ -255,7 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const datos = cargarDatosReportes();
 
   renderResumenComuna(datos, comuna, sesion);
-  renderCompromisosResumen(comuna);
   renderGraficoPersonasPorLider(datos, comuna);
   renderGraficoVotan(datos, comuna);
 });
