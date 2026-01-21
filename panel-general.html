@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel general - Programa Pasto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <!-- MENÚ LATERAL -->
+  <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-title">Menú</div>
+    <nav class="sidebar-nav">
+      <a href="index.html">Captura</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="reuniones.html">Reuniones</a>
+      <a href="compromisos.html">Compromisos</a>
+      <a href="panel-general.html">Panel general</a>
+    </nav>
+  </aside>
+
+  <div class="app-container">
+
+    <!-- ENCABEZADO -->
+    <header class="app-header">
+      <h1>Panel general de comunas</h1>
+      <p class="app-subtitle">
+        Vista global para gerencia, Dra. Teresa y coordinación de Pasto.
+      </p>
+    </header>
+
+    <!-- SIN SESIÓN -->
+    <section id="no-session-section" class="card" style="display:none;">
+      <h2>Sesión no encontrada</h2>
+      <p class="small-text">
+        Para ver el panel general, primero debe existir una sesión iniciada en el sistema.
+      </p>
+      <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
+    </section>
+
+    <!-- PANEL GENERAL -->
+    <section id="panel-section" class="card" style="display:none;">
+
+      <!-- RESUMEN GLOBAL -->
+      <section class="subcard">
+        <h3>Resumen global</h3>
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-label">Total comunas con datos</span>
+            <span id="pg-total-comunas" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Total líderes</span>
+            <span id="pg-total-lideres" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Total personas vinculadas</span>
+            <span id="pg-total-personas" class="resumen-value">0</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Total compromisos</span>
+            <span id="pg-total-compromisos" class="resumen-value">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLA POR COMUNA -->
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Detalle por comuna</h3>
+        <p class="small-text">
+          Comparativo por comuna de líderes, personas vinculadas y compromisos.
+        </p>
+
+        <div class="tabla-wrapper" style="margin-top:8px;">
+          <table class="tabla-registros">
+            <thead>
+              <tr>
+                <th>Comuna</th>
+                <th>Líderes</th>
+                <th>Personas</th>
+                <th>Votan por Teresa</th>
+                <th>% Compromiso</th>
+                <th>Compromisos</th>
+                <th>Pendientes</th>
+                <th>En gestión</th>
+                <th>Cumplidos</th>
+              </tr>
+            </thead>
+            <tbody id="pg-tbody-comunas">
+              <!-- Filas generadas por JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- GRÁFICOS -->
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Personas vinculadas por comuna</h3>
+        <p class="small-text">
+          Comparación del tamaño de las bases de datos entre comunas.
+        </p>
+        <div style="max-width:480px; margin:0 auto;">
+          <canvas id="pg-chart-personas"></canvas>
+        </div>
+      </section>
+
+      <section class="subcard" style="margin-top:16px;">
+        <h3>Compromisos por comuna</h3>
+        <p class="small-text">
+          Total de compromisos registrados por comuna.
+        </p>
+        <div style="max-width:480px; margin:0 auto;">
+          <canvas id="pg-chart-compromisos"></canvas>
+        </div>
+      </section>
+
+    </section>
+
+  </div>
+
+  <!-- Librería de gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lógica del panel general -->
+  <script src="assets/js/panel-general.js"></script>
+  <!-- Menú lateral -->
+  <script src="assets/js/menu.js"></script>
+</body>
+</html>
