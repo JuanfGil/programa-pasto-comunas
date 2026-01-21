@@ -131,50 +131,8 @@
 
   <!-- Librería de gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lógica -->
   <script src="assets/js/reportes.js"></script>
   <script src="assets/js/menu.js"></script>
-
-  <!-- SCRIPT DE COMPROMISOS -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      let sesionRaw = localStorage.getItem("pasto_sesion");
-      if (!sesionRaw) return;
-      let sesion = JSON.parse(sesionRaw || "{}");
-      if (!sesion.comuna) return;
-
-      let compromisosRaw = localStorage.getItem("pasto_compromisos");
-      let compromisos = JSON.parse(compromisosRaw || "[]");
-      let lista = compromisos.filter(c => c.comuna === sesion.comuna);
-
-      let total = lista.length;
-      let pendientes = lista.filter(c => c.estado === "pendiente").length;
-      let gestion = lista.filter(c => c.estado === "gestion").length;
-      let cumplidos = lista.filter(c => c.estado === "cumplido").length;
-
-      const set = (id,val)=>{ let el=document.getElementById(id); if(el) el.textContent = val; };
-      set("rep-comp-total", total);
-      set("rep-comp-pendientes", pendientes);
-      set("rep-comp-gestion", gestion);
-      set("rep-comp-cumplidos", cumplidos);
-
-      if (window.Chart) {
-        new Chart(document.getElementById("chartCompromisos"), {
-          type: "doughnut",
-          data: {
-            labels: ["Pendientes","En gestión","Cumplidos"],
-            datasets: [{
-              data: [pendientes, gestion, cumplidos],
-              backgroundColor: ["#fbbf24","#38bdf8","#22c55e"]
-            }]
-          },
-          options: {
-            plugins:{ legend:{ position:"bottom" } },
-            maintainAspectRatio:true
-          }
-        });
-      }
-    });
-  </script>
-
 </body>
 </html>
