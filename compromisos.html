@@ -8,7 +8,6 @@
 </head>
 <body>
 
-  <!-- MENÚ LATERAL -->
   <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-title">Menú</div>
@@ -18,17 +17,15 @@
   <div class="app-container">
     <header class="app-header">
       <h1>Compromisos</h1>
-      <p class="app-subtitle">Conectados a reuniones y a líderes (sin romper lo existente).</p>
+      <p class="app-subtitle">Revisión y aprobación por Gerencia/Coordinación.</p>
     </header>
 
-    <!-- SIN SESIÓN -->
     <section id="no-session-section" class="card" style="display:none;">
       <h2>Sesión no encontrada</h2>
       <p class="small-text">Debes iniciar sesión para ver esta página.</p>
       <a href="index.html" class="btn-primary">Ir al inicio</a>
     </section>
 
-    <!-- CON SESIÓN -->
     <section id="compromisos-section" class="card" style="display:none;">
       <div class="comuna-header">
         <div>
@@ -40,40 +37,29 @@
         </div>
       </div>
 
-      <!-- FORMULARIO -->
       <section class="subcard">
         <h3>Registrar compromiso</h3>
 
         <form id="comp-form">
-          <!-- LÍDER -->
           <div class="form-group">
             <label for="comp-lider">Líder o contacto</label>
             <select id="comp-lider" required>
               <option value="">Seleccione un líder</option>
             </select>
-            <p class="small-text" style="margin-top:6px;">
-              Esto conecta el compromiso al líder (para reportar por líder).
-            </p>
           </div>
 
-          <!-- REUNIÓN -->
           <div class="form-group">
             <label for="comp-reunion">Reunión asociada</label>
             <select id="comp-reunion">
               <option value="">Sin reunión</option>
             </select>
-            <p class="small-text" style="margin-top:6px;">
-              Esto conecta el compromiso a una reunión (para reportar compromisos por reunión).
-            </p>
           </div>
 
-          <!-- TIPO DE COMPROMISO -->
           <div class="form-group">
             <label for="comp-tipo">Tipo de compromiso</label>
-            <input id="comp-tipo" type="text" required placeholder="Ej: logística, sonido, transporte, convocatoria..." />
+            <input id="comp-tipo" type="text" required placeholder="Ej: logística, sonido, transporte..." />
           </div>
 
-          <!-- ESTADO + PRIORIDAD -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div class="form-group">
               <label for="comp-estado">Estado</label>
@@ -94,7 +80,6 @@
             </div>
           </div>
 
-          <!-- FECHA -->
           <div class="form-group">
             <label for="comp-fecha">Fecha</label>
             <input id="comp-fecha" type="date" required />
@@ -104,7 +89,6 @@
         </form>
       </section>
 
-      <!-- TABLA -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Listado de compromisos</h3>
         <div class="tabla-wrapper">
@@ -117,6 +101,7 @@
                 <th>Tipo</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
+                <th>Aprobado</th>
               </tr>
             </thead>
             <tbody id="comp-tbody"></tbody>
@@ -126,7 +111,6 @@
     </section>
   </div>
 
-  <!-- Excel (SheetJS) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script src="assets/js/guard.js"></script>
