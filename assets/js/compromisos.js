@@ -1,5 +1,5 @@
 // ======================================
-// COMPROMISOS.JS (compatible + aprobación)
+// COMPROMISOS.JS (compatible + aprobación global por rol)
 // ======================================
 
 const LS_SESION = "pasto_sesion";
@@ -37,12 +37,21 @@ function getCompromisos() {
 }
 function saveCompromisos(arr) { localStorage.setItem(LS_COMPROMISOS, JSON.stringify(arr)); }
 
+function isAprobadorGlobal(rol) {
+  const r = (rol || "").toLowerCase();
+  return r === "admin" || r === "gerencia" || r === "coordinador";
+}
+
 function comunaActiva(sesion, datos) {
+  // Dinamizadores: su comuna
   if (sesion?.comuna && sesion.comuna !== "ALL") return sesion.comuna;
+  // Si es global, solo usamos una comuna "por defecto" para cargar el formulario,
+  // pero la tabla mostrará TODO.
   const keys = Object.keys(datos || {});
   return keys[0] || "Comuna 1";
 }
 
+// para conectar compromisos con reuniones sin tocar reuniones.js
 function reunionKey(r) {
   const f = norm(r.fecha);
   const h = norm(r.hora);
@@ -107,6 +116,14 @@ function poblarSelectReunion(comuna, liderKeyValue) {
   });
 }
 
+function resolverReunionTextoPorKey(comuna, rKey) {
+  if (!rKey) return "—";
+  const reuniones = getReuniones().filter(r => norm(r.comuna) === norm(comuna));
+  const r = reuniones.find(x => reunionKey(x) === rKey);
+  if (!r) return "—";
+  return `${r.fecha || ""} ${r.hora || ""} • ${r.tipo || "Reunión"}`;
+}
+
 function badgePrioridad(p) {
   const v = (p || "").toLowerCase();
   const base = `display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900;`;
@@ -114,21 +131,12 @@ function badgePrioridad(p) {
   if (v === "media") return `<span style="${base} background:#fef9c3; color:#854d0e;">Media</span>`;
   return `<span style="${base} background:#e5e7eb; color:#111827;">Baja</span>`;
 }
-
 function badgeEstado(e) {
   const v = (e || "").toLowerCase();
   const base = `display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900;`;
   if (v.includes("cumpl")) return `<span style="${base} background:#dcfce7; color:#166534;">Cumplido</span>`;
   if (v.includes("gestion")) return `<span style="${base} background:#dbeafe; color:#1e40af;">En gestión</span>`;
   return `<span style="${base} background:#fef9c3; color:#854d0e;">Pendiente</span>`;
-}
-
-function resolverReunionTextoPorKey(comuna, rKey) {
-  if (!rKey) return "—";
-  const reuniones = getReuniones().filter(r => norm(r.comuna) === norm(comuna));
-  const r = reuniones.find(x => reunionKey(x) === rKey);
-  if (!r) return "—";
-  return `${r.fecha || ""} ${r.hora || ""} • ${r.tipo || "Reunión"}`;
 }
 
 function normalizarCompromiso(c) {
@@ -143,43 +151,39 @@ function normalizarCompromiso(c) {
     prioridad: c.prioridad || "Media",
     fecha: c.fecha || "",
 
-    // ✅ NUEVO: aprobación
     aprobado: typeof c.aprobado === "boolean" ? c.aprobado : false,
     aprobadoPor: c.aprobadoPor || "",
     aprobadoFecha: c.aprobadoFecha || ""
   };
 }
 
-function canApprove(rol) {
-  const r = (rol || "").toLowerCase();
-  // ✅ solo Gerencia o Coordinador (y Admin para no bloquear)
-  return r === "gerencia" || r === "coordinador" || r === "admin";
-}
-
-function renderTabla(comuna, sesion) {
+function renderTabla(sesion, comunaBase) {
   const tbody = document.getElementById("comp-tbody");
   if (!tbody) return;
 
   const rol = (sesion?.rol || "").toLowerCase();
-  const puedeAprobar = canApprove(rol);
+  const aprobadorGlobal = isAprobadorGlobal(rol);
 
-  let all = getCompromisos().map(normalizarCompromiso);
+  const all = getCompromisos().map(normalizarCompromiso);
 
-  // Si usuario es full (ALL), muestra todos; si no, solo su comuna
-  const isAll = (sesion?.comuna === "ALL");
-  const compromisos = isAll ? all : all.filter(c => norm(c.comuna) === norm(comuna));
+  // ✅ Si es admin/gerencia/coordinador: ver TODO
+  // ✅ Si es dinamizador: ver solo su comuna
+  const data = aprobadorGlobal
+    ? all
+    : all.filter(c => norm(c.comuna) === norm(comunaBase));
 
-  compromisos.sort((a,b) => (b.fecha || "").localeCompare(a.fecha || ""));
+  data.sort((a,b) => (b.fecha || "").localeCompare(a.fecha || ""));
 
-  if (!compromisos.length) {
+  if (!data.length) {
     tbody.innerHTML = `<tr><td colspan="7" class="small-text">No hay compromisos registrados.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = compromisos.map(c => {
-    const reunionTxt = resolverReunionTextoPorKey(c.comuna || comuna, c.reunionKey);
+  tbody.innerHTML = data.map(c => {
+    const reunionTxt = resolverReunionTextoPorKey(c.comuna || comunaBase, c.reunionKey);
     const checked = c.aprobado ? "checked" : "";
-    const disabled = puedeAprobar ? "" : "disabled";
+    const disabled = aprobadorGlobal ? "" : "disabled";
+    const title = c.aprobado ? `Aprobado por: ${c.aprobadoPor || "—"}` : "No aprobado";
 
     return `
       <tr>
@@ -190,26 +194,21 @@ function renderTabla(comuna, sesion) {
         <td>${badgePrioridad(c.prioridad)}</td>
         <td>${badgeEstado(c.estado)}</td>
         <td style="text-align:center;">
-          <input type="checkbox"
-            data-comp-id="${c.id}"
-            ${checked}
-            ${disabled}
-            title="${c.aprobado ? `Aprobado por: ${c.aprobadoPor || "—"}` : "No aprobado"}"
-          />
+          <input type="checkbox" data-comp-id="${c.id}" ${checked} ${disabled} title="${title}">
         </td>
       </tr>
     `;
   }).join("");
 
-  // ✅ Listener para aprobar (solo roles autorizados)
+  // ✅ Toggle aprobación (solo global)
   tbody.querySelectorAll('input[type="checkbox"][data-comp-id]').forEach(chk => {
     chk.addEventListener("change", (e) => {
-      if (!puedeAprobar) return;
+      if (!aprobadorGlobal) return;
 
       const compId = e.target.getAttribute("data-comp-id");
       const nuevoValor = !!e.target.checked;
 
-      let arr = getCompromisos().map(normalizarCompromiso);
+      const arr = getCompromisos().map(normalizarCompromiso);
       const idx = arr.findIndex(x => x.id === compId);
       if (idx === -1) return;
 
@@ -218,17 +217,17 @@ function renderTabla(comuna, sesion) {
       arr[idx].aprobadoFecha = nuevoValor ? new Date().toISOString() : "";
 
       saveCompromisos(arr);
-
-      // re-render para actualizar tooltips
-      renderTabla(comuna, sesion);
+      renderTabla(sesion, comunaBase);
     });
   });
 }
 
-function exportExcel(sesion, comuna) {
+function exportExcel(sesion, comunaBase) {
+  const rol = (sesion?.rol || "").toLowerCase();
+  const aprobadorGlobal = isAprobadorGlobal(rol);
+
   const all = getCompromisos().map(normalizarCompromiso);
-  const isAll = (sesion?.comuna === "ALL");
-  const data = isAll ? all : all.filter(c => norm(c.comuna) === norm(comuna));
+  const data = aprobadorGlobal ? all : all.filter(c => norm(c.comuna) === norm(comunaBase));
 
   const rows = data.map(c => ({
     Comuna: c.comuna || "",
@@ -237,7 +236,7 @@ function exportExcel(sesion, comuna) {
     "Tipo de compromiso": c.tipoCompromiso || "",
     Estado: c.estado || "",
     Prioridad: c.prioridad || "",
-    "Reunión": resolverReunionTextoPorKey(c.comuna || comuna, c.reunionKey),
+    "Reunión": resolverReunionTextoPorKey(c.comuna || comunaBase, c.reunionKey),
     Aprobado: c.aprobado ? "SI" : "NO",
     "Aprobado por": c.aprobadoPor || "",
     "Aprobado fecha": c.aprobadoFecha || ""
@@ -246,7 +245,10 @@ function exportExcel(sesion, comuna) {
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Compromisos");
-  XLSX.writeFile(wb, `Compromisos_${(isAll ? "TODAS" : comuna).replace(/\s+/g, "_")}.xlsx`);
+  XLSX.writeFile(
+    wb,
+    `Compromisos_${(aprobadorGlobal ? "TODAS" : comunaBase).replace(/\s+/g, "_")}.xlsx`
+  );
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -264,23 +266,26 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sec) sec.style.display = "block";
 
   const datos = getDatos();
-  const comuna = comunaActiva(sesion, datos);
+  const comunaBase = comunaActiva(sesion, datos);
 
-  setText("comp-comuna-title", sesion.comuna === "ALL" ? "TODAS LAS COMUNAS" : comuna);
+  const rol = (sesion.rol || "").toLowerCase();
+  const aprobadorGlobal = isAprobadorGlobal(rol);
+
+  // UI info
+  setText("comp-comuna-title", aprobadorGlobal ? "TODAS LAS COMUNAS" : comunaBase);
   setText("comp-user-info", `Sesión activa como: ${sesion.username} (${sesion.rol})`);
 
-  // Selects (si ALL, usamos primera comuna para cargar líderes/reuniones en formulario)
-  const comunaForm = (sesion.comuna === "ALL") ? comuna : comuna;
-
-  poblarSelectLider(comunaForm);
-  poblarSelectReunion(comunaForm, "");
+  // Form: si es global, igual cargamos líderes/reuniones de la comuna base para registrar;
+  // la aprobación se hace en la tabla global.
+  poblarSelectLider(comunaBase);
+  poblarSelectReunion(comunaBase, "");
 
   const selLider = document.getElementById("comp-lider");
   selLider?.addEventListener("change", () => {
-    poblarSelectReunion(comunaForm, selLider.value || "");
+    poblarSelectReunion(comunaBase, selLider.value || "");
   });
 
-  renderTabla(comuna, sesion);
+  renderTabla(sesion, comunaBase);
 
   document.getElementById("comp-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -298,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (liderKey.startsWith("name:")) return liderKey.slice(5);
       if (liderKey.startsWith("id:")) {
         const idVal = liderKey.slice(3);
-        const lideres = cargarLideresDeComuna(comunaForm);
+        const lideres = cargarLideresDeComuna(comunaBase);
         return lideres.find(l => l.id === idVal)?.nombre || "";
       }
       return "";
@@ -306,7 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const comp = {
       id: id("c"),
-      comuna: comunaForm,
+      comuna: comunaBase,
       liderKey,
       liderNombre: liderNombre || "Contacto",
       reunionKey: reunionKeySel || "",
@@ -324,12 +329,12 @@ document.addEventListener("DOMContentLoaded", () => {
     saveCompromisos(arr);
 
     e.target.reset();
-    poblarSelectLider(comunaForm);
-    poblarSelectReunion(comunaForm, "");
-    renderTabla(comuna, sesion);
+    poblarSelectLider(comunaBase);
+    poblarSelectReunion(comunaBase, "");
+    renderTabla(sesion, comunaBase);
   });
 
   document.getElementById("btn-export-excel")?.addEventListener("click", () => {
-    exportExcel(sesion, comuna);
+    exportExcel(sesion, comunaBase);
   });
 });
