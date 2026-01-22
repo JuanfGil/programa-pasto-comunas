@@ -1,29 +1,21 @@
 // ================================
 // AUTH.JS - Usuarios / Roles
 // ================================
-
 (function () {
-  // Roles:
-  // - admin: Teresa (todo)
-  // - gerencia: Camilo (todo)
-  // - coordinador: Mario (todo)
-  // - supervisor: Darwin (todas las comunas + panel general)
-  // - dinamizador: 12 comunas, cada uno solo su comuna
-
   const AUTH_USERS = [
-    // ✅ Teresa (Admin)
+    // Admin
     { username: "teresa", password: "teresa123", rol: "admin", comuna: "ALL" },
 
-    // ✅ Camilo (Gerencia)
+    // Gerencia
     { username: "camilo", password: "camilo123", rol: "gerencia", comuna: "ALL" },
 
-    // ✅ Mario (Coordinador)
+    // Coordinador
     { username: "mario", password: "mario123", rol: "coordinador", comuna: "ALL" },
 
-    // ✅ Darwin (todas las comunas)
+    // Darwin (acceso a todas las comunas)
     { username: "darwin", password: "darwin123", rol: "supervisor", comuna: "ALL" },
 
-    // ✅ 12 Dinamizadores (uno por comuna)
+    // 12 Dinamizadores (uno por comuna)
     { username: "din1",  password: "comuna1",  rol: "dinamizador", comuna: "Comuna 1" },
     { username: "din2",  password: "comuna2",  rol: "dinamizador", comuna: "Comuna 2" },
     { username: "din3",  password: "comuna3",  rol: "dinamizador", comuna: "Comuna 3" },
@@ -41,21 +33,17 @@
   const LS_SESION = "pasto_sesion";
 
   function authGuardarSesion({ username, rol, comuna }) {
-    const sesion = {
+    localStorage.setItem(LS_SESION, JSON.stringify({
       username,
       rol,
       comuna, // "Comuna X" o "ALL"
       ts: Date.now()
-    };
-    localStorage.setItem(LS_SESION, JSON.stringify(sesion));
+    }));
   }
 
   function authGetSesion() {
-    try {
-      return JSON.parse(localStorage.getItem(LS_SESION) || "null");
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(localStorage.getItem(LS_SESION) || "null"); }
+    catch { return null; }
   }
 
   function authLogout() {
@@ -64,27 +52,30 @@
   }
 
   function authLogin(username, password) {
-    const u = AUTH_USERS.find(
-      (x) => x.username === username && x.password === password
-    );
+    const u = AUTH_USERS.find(x => x.username === username && x.password === password);
     if (!u) return null;
-
     authGuardarSesion({ username: u.username, rol: u.rol, comuna: u.comuna });
     return u;
   }
 
-  function authIsFullAccess(rol) {
+  // 🔥 Acceso total por rol (más seguro que depender de "ALL")
+  function isAprobadorGlobal(rol) {
+    const r = (rol || "").toLowerCase();
+    return r === "admin" || r === "gerencia" || r === "coordinador";
+  }
+
+  function isFullAccess(rol) {
     const r = (rol || "").toLowerCase();
     return r === "admin" || r === "gerencia" || r === "coordinador" || r === "supervisor";
   }
 
-  // Exponer al window
   window.PASTO_AUTH = {
     AUTH_USERS,
     authLogin,
     authGetSesion,
     authLogout,
     authGuardarSesion,
-    authIsFullAccess,
+    isAprobadorGlobal,
+    isFullAccess
   };
 })();
