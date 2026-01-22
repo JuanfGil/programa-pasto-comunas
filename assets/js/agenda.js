@@ -1,6 +1,7 @@
 // ================================
-// AGENDA.JS
+// AGENDA.JS (HOY / PRÓXIMAS / PASADAS)
 // ================================
+
 function agGetSesion() {
   try {
     return JSON.parse(localStorage.getItem("pasto_sesion") || "null");
@@ -24,7 +25,7 @@ function agNormalizarEstado(estado) {
 }
 
 function agCargarReuniones() {
-  // Ajusta la key si tu reuniones.html usa otra
+  // Keys posibles (por si tu reuniones.html cambió el nombre)
   const keysPosibles = ["pasto_reuniones", "reuniones", "pasto_meetings"];
   for (const k of keysPosibles) {
     try {
@@ -38,12 +39,8 @@ function agCargarReuniones() {
 }
 
 function agParseFechaHora(item) {
-  // Intentamos armar un Date con lo que exista
-  // formatos típicos:
-  // item.fecha = "2026-01-22", item.hora = "23:10"
-  // o item.fechaHora = "2026-01-22T23:10"
-  const f = (item.fecha || "").toString().trim();
-  const h = (item.hora || "").toString().trim();
+  const f = (item.fecha || "").toString().trim();          // "2026-01-22"
+  const h = (item.hora || "").toString().trim();           // "14:30"
   const fh = (item.fechaHora || item.datetime || "").toString().trim();
 
   if (fh) {
@@ -61,7 +58,15 @@ function agParseFechaHora(item) {
     if (!isNaN(d.getTime())) return d;
   }
 
-  return new Date(0); // al final
+  return new Date(0);
+}
+
+function agFechaISO(dateObj) {
+  // YYYY-MM-DD en hora local
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function agFiltrarPorComuna(reuniones, comuna) {
@@ -86,7 +91,7 @@ function agRenderResumen(lista) {
 
 function agBadgeEstado(estado) {
   const est = agNormalizarEstado(estado);
-  const base = `display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600;`;
+  const base = `display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700;`;
 
   if (est === "realizada") return `<span style="${base} background:#dcfce7; color:#166534;">Realizada</span>`;
   if (est === "cancelada") return `<span style="${base} background:#fee2e2; color:#991b1b;">Cancelada</span>`;
@@ -104,7 +109,7 @@ function agCard(item) {
     <div style="border:1px solid #e5e7eb; border-radius:14px; padding:14px; background:#fff;">
       <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <div style="font-weight:800;">${tipo || "Reunión"}</div>
+          <div style="font-weight:900;">${tipo || "Reunión"}</div>
           ${agBadgeEstado(estado)}
         </div>
         <div style="color:#6b7280; font-size:13px;">
@@ -115,27 +120,51 @@ function agCard(item) {
       <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
         <div>
           <div style="font-size:12px; color:#6b7280;">Lugar</div>
-          <div style="font-weight:600;">${lugar || "No especificado"}</div>
+          <div style="font-weight:700;">${lugar || "No especificado"}</div>
         </div>
         <div>
           <div style="font-size:12px; color:#6b7280;">Comuna</div>
-          <div style="font-weight:600;">${item.comuna || "—"}</div>
+          <div style="font-weight:700;">${item.comuna || "—"}</div>
         </div>
       </div>
     </div>
   `;
 }
 
-function agRenderLista(lista) {
-  const cont = document.getElementById("agenda-list");
+function agRenderLista(containerId, lista) {
+  const cont = document.getElementById(containerId);
   if (!cont) return;
 
   if (!lista.length) {
-    cont.innerHTML = `<div class="small-text">No hay reuniones registradas para esta comuna.</div>`;
+    cont.innerHTML = `<div class="small-text">No hay reuniones en esta sección.</div>`;
     return;
   }
 
   cont.innerHTML = lista.map(agCard).join("");
+}
+
+function agSeccionar(lista) {
+  const hoyISO = agFechaISO(new Date());
+
+  const hoy = [];
+  const proximas = [];
+  const pasadas = [];
+
+  for (const r of lista) {
+    const d = agParseFechaHora(r);
+    const iso = agFechaISO(d);
+
+    if (iso === hoyISO) hoy.push(r);
+    else if (iso > hoyISO) proximas.push(r);
+    else pasadas.push(r);
+  }
+
+  // Orden:
+  hoy.sort((a, b) => agParseFechaHora(a) - agParseFechaHora(b));
+  proximas.sort((a, b) => agParseFechaHora(a) - agParseFechaHora(b));
+  pasadas.sort((a, b) => agParseFechaHora(b) - agParseFechaHora(a)); // más recientes primero
+
+  return { hoy, proximas, pasadas };
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -159,29 +188,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (info) info.textContent = `Sesión activa como: ${sesion.username}`;
 
   const all = agCargarReuniones();
-  let lista = agFiltrarPorComuna(all, comuna);
+  const baseLista = agFiltrarPorComuna(all, comuna);
 
-  // Orden por fecha/hora
-  lista.sort((a, b) => agParseFechaHora(a) - agParseFechaHora(b));
-
-  // Render inicial
-  agRenderResumen(lista);
-  agRenderLista(lista);
-
-  // Filtros
   const filtroEstado = document.getElementById("ag-filter-estado");
   const search = document.getElementById("ag-search");
 
-  function aplicarFiltros() {
+  function aplicarFiltrosYRender() {
     const est = (filtroEstado?.value || "todas").toLowerCase();
     const q = (search?.value || "").toLowerCase().trim();
 
-    let filtrada = [...lista];
+    let filtrada = [...baseLista];
 
+    // estado
     if (est !== "todas") {
       filtrada = filtrada.filter(r => agNormalizarEstado(r.estado) === est);
     }
 
+    // búsqueda
     if (q) {
       filtrada = filtrada.filter(r => {
         const lugar = (r.lugar || "").toString().toLowerCase();
@@ -190,10 +213,25 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // resumen basado en lo que se está viendo (filtrado)
     agRenderResumen(filtrada);
-    agRenderLista(filtrada);
+
+    // secciones
+    const { hoy, proximas, pasadas } = agSeccionar(filtrada);
+
+    agSetText("ag-count-hoy", hoy.length);
+    agSetText("ag-count-proximas", proximas.length);
+    agSetText("ag-count-pasadas", pasadas.length);
+
+    agRenderLista("agenda-list-hoy", hoy);
+    agRenderLista("agenda-list-proximas", proximas);
+    agRenderLista("agenda-list-pasadas", pasadas);
   }
 
-  if (filtroEstado) filtroEstado.addEventListener("change", aplicarFiltros);
-  if (search) search.addEventListener("input", aplicarFiltros);
+  // Render inicial
+  aplicarFiltrosYRender();
+
+  // Eventos
+  if (filtroEstado) filtroEstado.addEventListener("change", aplicarFiltrosYRender);
+  if (search) search.addEventListener("input", aplicarFiltrosYRender);
 });
