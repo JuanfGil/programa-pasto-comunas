@@ -12,134 +12,125 @@
   <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-title">Menú</div>
-    <nav class="sidebar-nav">
-      <a href="index.html">Captura</a>
-      <a href="reportes.html">Reportes</a>
-      <a href="reuniones.html">Reuniones</a>
-      <a href="compromisos.html">Compromisos</a>
-    </nav>
+    <nav class="sidebar-nav"></nav>
   </aside>
 
   <div class="app-container">
-
-    <!-- ENCABEZADO -->
     <header class="app-header">
-      <h1>Compromisos por comuna</h1>
-      <p class="app-subtitle">
-        Registro y seguimiento de compromisos asumidos con la comunidad.
-      </p>
+      <h1>Compromisos</h1>
+      <p class="app-subtitle">Conectados a reuniones y a líderes (sin romper lo existente).</p>
     </header>
 
     <!-- SIN SESIÓN -->
     <section id="no-session-section" class="card" style="display:none;">
       <h2>Sesión no encontrada</h2>
-      <p class="small-text">
-        Para gestionar compromisos, primero debes iniciar sesión en la página principal.
-      </p>
-      <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
+      <p class="small-text">Debes iniciar sesión para ver esta página.</p>
+      <a href="index.html" class="btn-primary">Ir al inicio</a>
     </section>
 
-    <!-- CON SESIÓN / COMPROMISOS -->
+    <!-- CON SESIÓN -->
     <section id="compromisos-section" class="card" style="display:none;">
-
       <div class="comuna-header">
         <div>
           <h2 id="comp-comuna-title">Comuna X</h2>
           <p id="comp-user-info" class="small-text"></p>
         </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btn-export-excel" class="btn-secondary">Descargar Excel</button>
+        </div>
       </div>
 
-      <!-- RESUMEN COMPROMISOS -->
+      <!-- FORMULARIO -->
       <section class="subcard">
-        <h3>Resumen de compromisos</h3>
-        <div class="resumen-grid">
-          <div class="resumen-item">
-            <span class="resumen-label">Total</span>
-            <span id="comp-total" class="resumen-value">0</span>
-          </div>
-          <div class="resumen-item">
-            <span class="resumen-label">Pendientes</span>
-            <span id="comp-pendientes" class="resumen-value">0</span>
-          </div>
-          <div class="resumen-item">
-            <span class="resumen-label">En gestión</span>
-            <span id="comp-gestion" class="resumen-value">0</span>
-          </div>
-          <div class="resumen-item">
-            <span class="resumen-label">Cumplidos</span>
-            <span id="comp-cumplidos" class="resumen-value">0</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- FORMULARIO DE COMPROMISO -->
-      <section class="subcard" style="margin-top:16px;">
         <h3>Registrar compromiso</h3>
-        <p class="small-text">
-          Relaciona el compromiso con la comuna actual. Más adelante podremos amarrarlo a reuniones específicas.
-        </p>
 
-        <form id="compromiso-form" style="margin-top:10px;">
+        <form id="comp-form">
+          <!-- LÍDER -->
           <div class="form-group">
-            <label for="comp-descripcion">Descripción del compromiso</label>
-            <textarea id="comp-descripcion" required placeholder="Ej: Gestionar jornada de salud visual en el barrio X"></textarea>
+            <label for="comp-lider">Líder o contacto</label>
+            <select id="comp-lider" required>
+              <option value="">Seleccione un líder</option>
+            </select>
+            <p class="small-text" style="margin-top:6px;">
+              Esto conecta el compromiso al líder (para reportar por líder).
+            </p>
           </div>
 
+          <!-- REUNIÓN -->
+          <div class="form-group">
+            <label for="comp-reunion">Reunión asociada</label>
+            <select id="comp-reunion">
+              <option value="">Sin reunión</option>
+            </select>
+            <p class="small-text" style="margin-top:6px;">
+              Esto conecta el compromiso a una reunión (para reportar compromisos por reunión).
+            </p>
+          </div>
+
+          <!-- TIPO DE COMPROMISO -->
           <div class="form-group">
             <label for="comp-tipo">Tipo de compromiso</label>
-            <select id="comp-tipo">
-              <option value="Infraestructura">Infraestructura</option>
-              <option value="Empleo / productivo">Empleo / productivo</option>
-              <option value="Apoyo social">Apoyo social</option>
-              <option value="Gestión institucional">Gestión institucional</option>
-              <option value="Otro">Otro</option>
-            </select>
+            <input id="comp-tipo" type="text" required placeholder="Ej: logística, sonido, transporte, convocatoria..." />
           </div>
 
+          <!-- ESTADO + PRIORIDAD -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label for="comp-estado">Estado</label>
+              <select id="comp-estado" required>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En gestión">En gestión</option>
+                <option value="Cumplido">Cumplido</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="comp-prioridad">Prioridad</label>
+              <select id="comp-prioridad" required>
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- FECHA -->
           <div class="form-group">
-            <label for="comp-estado">Estado</label>
-            <select id="comp-estado">
-              <option value="pendiente">Pendiente</option>
-              <option value="gestion">En gestión</option>
-              <option value="cumplido">Cumplido</option>
-            </select>
+            <label for="comp-fecha">Fecha</label>
+            <input id="comp-fecha" type="date" required />
           </div>
 
-          <button type="submit" class="btn-primary">Guardar compromiso</button>
+          <button class="btn-primary" type="submit">Guardar compromiso</button>
         </form>
       </section>
 
-      <!-- TABLA DE COMPROMISOS -->
+      <!-- TABLA -->
       <section class="subcard" style="margin-top:16px;">
-        <h3>Compromisos de la comuna</h3>
-        <p class="small-text" style="margin-bottom:8px;">
-          Puedes cambiar el estado o eliminar un compromiso cuando ya no aplique.
-        </p>
-
+        <h3>Listado de compromisos</h3>
         <div class="tabla-wrapper">
           <table class="tabla-registros">
             <thead>
               <tr>
-                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>Líder/Contacto</th>
+                <th>Reunión</th>
                 <th>Tipo</th>
+                <th>Prioridad</th>
                 <th>Estado</th>
-                <th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="tbody-compromisos">
-              <!-- Filas por JS -->
-            </tbody>
+            <tbody id="comp-tbody"></tbody>
           </table>
         </div>
       </section>
-
     </section>
-
   </div>
 
-  <!-- JS -->
+  <!-- Excel (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <script src="assets/js/guard.js"></script>
-  <script src="assets/js/compromisos.js"></script>
   <script src="assets/js/menu.js"></script>
+  <script src="assets/js/compromisos.js"></script>
 </body>
 </html>
