@@ -1,257 +1,321 @@
-const LS_SESION_KEY = "pasto_sesion";
-const LS_COMPROMISOS_KEY = "pasto_compromisos";
+// ======================================
+// COMPROMISOS.JS (compatible / sin romper)
+// ======================================
 
-let compromisos = [];
-let comunaCompActual = null;
-let usuarioCompActual = null;
-let nextCompId = 1;
+const LS_SESION = "pasto_sesion";
+const LS_DATOS = "pasto_datos";
+const LS_REUNIONES = "pasto_reuniones";
+const LS_COMPROMISOS = "pasto_compromisos";
 
-// ====== SESIÓN ====== //
-function cargarSesionComp() {
+function safeJSON(key, fallback) {
   try {
-    const raw = localStorage.getItem(LS_SESION_KEY);
-    if (!raw) return null;
-    const sesion = JSON.parse(raw);
-    if (!sesion || !sesion.username || !sesion.comuna) return null;
-    return sesion;
-  } catch (e) {
-    console.warn("Error al cargar sesión en compromisos:", e);
-    return null;
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
   }
 }
 
-// ====== COMPROMISOS LOCALSTORAGE ====== //
-function cargarCompromisos() {
-  try {
-    const data = JSON.parse(localStorage.getItem(LS_COMPROMISOS_KEY) || "[]");
-    if (Array.isArray(data)) {
-      compromisos = data;
-      if (compromisos.length > 0) {
-        nextCompId = Math.max(...compromisos.map((c) => c.id || 0)) + 1;
-      }
-    } else {
-      compromisos = [];
-    }
-  } catch (e) {
-    console.warn("Error al cargar compromisos:", e);
-    compromisos = [];
-  }
+function norm(s) {
+  return (s || "").toString().trim();
 }
 
-function guardarCompromisos() {
-  try {
-    localStorage.setItem(LS_COMPROMISOS_KEY, JSON.stringify(compromisos));
-  } catch (e) {
-    console.warn("Error al guardar compromisos:", e);
-  }
+function getSesion() {
+  return safeJSON(LS_SESION, null);
 }
 
-// ====== INICIO PÁGINA ====== //
-document.addEventListener("DOMContentLoaded", () => {
-  const noSessionSection = document.getElementById("no-session-section");
-  const compromisosSection = document.getElementById("compromisos-section");
+function getDatos() {
+  const d = safeJSON(LS_DATOS, {});
+  return (d && typeof d === "object") ? d : {};
+}
 
-  const sesion = cargarSesionComp();
-  if (!sesion) {
-    if (noSessionSection) noSessionSection.style.display = "block";
-    if (compromisosSection) compromisosSection.style.display = "none";
-    return;
-  }
+function getReuniones() {
+  const arr = safeJSON(LS_REUNIONES, []);
+  return Array.isArray(arr) ? arr : [];
+}
 
-  usuarioCompActual = sesion.username;
-  comunaCompActual = sesion.comuna;
+function getCompromisos() {
+  const arr = safeJSON(LS_COMPROMISOS, []);
+  return Array.isArray(arr) ? arr : [];
+}
 
-  cargarCompromisos();
+function saveCompromisos(arr) {
+  localStorage.setItem(LS_COMPROMISOS, JSON.stringify(arr));
+}
 
-  const compComunaTitle = document.getElementById("comp-comuna-title");
-  const compUserInfo = document.getElementById("comp-user-info");
-  const form = document.getElementById("compromiso-form");
-  const tbody = document.getElementById("tbody-compromisos");
+function setText(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = String(v);
+}
 
-  if (compComunaTitle) compComunaTitle.textContent = comunaCompActual;
-  if (compUserInfo) compUserInfo.textContent = `Sesión activa como: ${usuarioCompActual}`;
+function id(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
-  if (noSessionSection) noSessionSection.style.display = "none";
-  if (compromisosSection) compromisosSection.style.display = "block";
+function comunaActiva(sesion, datos) {
+  if (sesion?.comuna) return sesion.comuna;
+  const keys = Object.keys(datos || {});
+  return keys[0] || "Comuna 1";
+}
 
-  if (form) {
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
+// ✅ Creamos un "reunionKey" estable sin modificar reuniones existentes
+function reunionKey(r) {
+  const f = norm(r.fecha);
+  const h = norm(r.hora);
+  const l = norm(r.lugar).toLowerCase();
+  const t = norm(r.tipo).toLowerCase();
+  return `${f}|${h}|${l}|${t}`;
+}
 
-      const descInput = document.getElementById("comp-descripcion");
-      const tipoInput = document.getElementById("comp-tipo");
-      const estadoInput = document.getElementById("comp-estado");
+function cargarLideresDeComuna(comuna) {
+  const datos = getDatos();
+  const comunaData = datos[comuna] || { lideres: [] };
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
 
-      const descripcion = (descInput.value || "").trim();
-      const tipo = (tipoInput.value || "").trim();
-      const estado = (estadoInput.value || "").trim();
+  // No forzamos cambios, solo leemos
+  return lideres.map(l => ({
+    id: l.id || "",             // si existe, bien; si no, igual sirve por nombre
+    nombre: l.nombre || ""
+  }));
+}
 
-      if (!descripcion) {
-        alert("Por favor escribe la descripción del compromiso.");
-        return;
-      }
+function poblarSelectLider(comuna) {
+  const select = document.getElementById("comp-lider");
+  if (!select) return;
 
-      const nuevoCompromiso = {
-        id: nextCompId++,
-        comuna: comunaCompActual,
-        dinamizador: usuarioCompActual,
-        descripcion,
-        tipo: tipo || "Otro",
-        estado: estado || "pendiente",
-        fechaCreacion: new Date().toISOString(),
-      };
+  select.innerHTML = `<option value="">Seleccione un líder</option>`;
 
-      compromisos.push(nuevoCompromiso);
-      guardarCompromisos();
-
-      descInput.value = "";
-      tipoInput.value = "Infraestructura";
-      estadoInput.value = "pendiente";
-
-      renderCompromisos(tbody);
+  const lideres = cargarLideresDeComuna(comuna);
+  lideres
+    .filter(l => norm(l.nombre))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .forEach(l => {
+      const opt = document.createElement("option");
+      // Usamos ID si existe; si no, usamos el nombre como "key" (compatibilidad)
+      opt.value = l.id ? `id:${l.id}` : `name:${l.nombre}`;
+      opt.textContent = l.nombre;
+      select.appendChild(opt);
     });
-  }
-
-  renderCompromisos(tbody);
-});
-
-// ====== RESUMEN ====== //
-function actualizarResumenCompromisos(lista) {
-  const totalSpan = document.getElementById("comp-total");
-  const pendSpan = document.getElementById("comp-pendientes");
-  const gestSpan = document.getElementById("comp-gestion");
-  const cumpSpan = document.getElementById("comp-cumplidos");
-
-  const total = lista.length;
-  const pendientes = lista.filter((c) => c.estado === "pendiente").length;
-  const gestion = lista.filter((c) => c.estado === "gestion").length;
-  const cumplidos = lista.filter((c) => c.estado === "cumplido").length;
-
-  if (totalSpan) totalSpan.textContent = total;
-  if (pendSpan) pendSpan.textContent = pendientes;
-  if (gestSpan) gestSpan.textContent = gestion;
-  if (cumpSpan) cumpSpan.textContent = cumplidos;
 }
 
-// ====== RENDER COMPROMISOS ====== //
-function renderCompromisos(tbody) {
-  if (!tbody) return;
+function poblarSelectReunion(comuna, liderKeyValue) {
+  const select = document.getElementById("comp-reunion");
+  if (!select) return;
 
-  tbody.innerHTML = "";
+  const reuniones = getReuniones().filter(r => norm(r.comuna) === norm(comuna));
 
-  const listaComuna = compromisos.filter((c) => c.comuna === comunaCompActual);
-
-  actualizarResumenCompromisos(listaComuna);
-
-  if (listaComuna.length === 0) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 4;
-    td.textContent = "Aún no hay compromisos registrados para esta comuna.";
-    td.className = "small-text";
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    return;
+  // Si tus reuniones ya guardan algo del líder, intentamos filtrar por coincidencia de nombre
+  // (sin asumir que existe liderId)
+  let liderNombre = "";
+  if (liderKeyValue?.startsWith("name:")) liderNombre = liderKeyValue.slice(5);
+  if (liderKeyValue?.startsWith("id:")) {
+    // si es id, igual intentamos buscar el nombre para filtro "suave"
+    const idVal = liderKeyValue.slice(3);
+    const lideres = cargarLideresDeComuna(comuna);
+    liderNombre = lideres.find(l => l.id === idVal)?.nombre || "";
   }
 
-  listaComuna.forEach((compromiso) => {
-    const tr = document.createElement("tr");
+  const filtradas = liderNombre
+    ? reuniones.filter(r => {
+        const ln = norm(r.liderNombre || r.lider || "").toLowerCase();
+        return ln.includes(liderNombre.toLowerCase());
+      })
+    : reuniones;
 
-    const tdDesc = document.createElement("td");
-    tdDesc.textContent = compromiso.descripcion;
+  filtradas.sort((a, b) => {
+    const da = new Date(`${a.fecha || "1970-01-01"}T${a.hora || "00:00"}`);
+    const db = new Date(`${b.fecha || "1970-01-01"}T${b.hora || "00:00"}`);
+    return da - db;
+  });
 
-    const tdTipo = document.createElement("td");
-    tdTipo.textContent = compromiso.tipo;
-
-    const tdEstado = document.createElement("td");
-    const spanEstado = document.createElement("span");
-    spanEstado.classList.add("estado-badge");
-    let texto = "";
-    if (compromiso.estado === "cumplido") {
-      spanEstado.style.backgroundColor = "#e6f6ec";
-      spanEstado.style.color = "#12653b";
-      texto = "Cumplido";
-    } else if (compromiso.estado === "gestion") {
-      spanEstado.style.backgroundColor = "#e0f2fe";
-      spanEstado.style.color = "#075985";
-      texto = "En gestión";
-    } else {
-      spanEstado.style.backgroundColor = "#fff7e0";
-      spanEstado.style.color = "#8a5a00";
-      texto = "Pendiente";
-    }
-    spanEstado.textContent = texto;
-    tdEstado.appendChild(spanEstado);
-
-    const tdAcciones = document.createElement("td");
-    const cont = document.createElement("div");
-    cont.style.display = "flex";
-    cont.style.flexDirection = "column";
-    cont.style.gap = "4px";
-
-    const btnPendiente = document.createElement("button");
-    btnPendiente.textContent = "Pendiente";
-    btnPendiente.className = "btn-secondary";
-    btnPendiente.style.fontSize = "11px";
-    btnPendiente.style.padding = "3px 8px";
-    btnPendiente.addEventListener("click", () =>
-      cambiarEstadoCompromiso(compromiso.id, "pendiente", tbody)
-    );
-
-    const btnGestion = document.createElement("button");
-    btnGestion.textContent = "En gestión";
-    btnGestion.className = "btn-secondary";
-    btnGestion.style.fontSize = "11px";
-    btnGestion.style.padding = "3px 8px";
-    btnGestion.addEventListener("click", () =>
-      cambiarEstadoCompromiso(compromiso.id, "gestion", tbody)
-    );
-
-    const btnCumplido = document.createElement("button");
-    btnCumplido.textContent = "Cumplido";
-    btnCumplido.className = "btn-secondary";
-    btnCumplido.style.fontSize = "11px";
-    btnCumplido.style.padding = "3px 8px";
-    btnCumplido.addEventListener("click", () =>
-      cambiarEstadoCompromiso(compromiso.id, "cumplido", tbody)
-    );
-
-    const btnEliminar = document.createElement("button");
-    btnEliminar.textContent = "Eliminar";
-    btnEliminar.className = "btn-secondary";
-    btnEliminar.style.fontSize = "11px";
-    btnEliminar.style.padding = "3px 8px";
-    btnEliminar.addEventListener("click", () =>
-      eliminarCompromiso(compromiso.id, tbody)
-    );
-
-    cont.appendChild(btnPendiente);
-    cont.appendChild(btnGestion);
-    cont.appendChild(btnCumplido);
-    cont.appendChild(btnEliminar);
-    tdAcciones.appendChild(cont);
-
-    tr.appendChild(tdDesc);
-    tr.appendChild(tdTipo);
-    tr.appendChild(tdEstado);
-    tr.appendChild(tdAcciones);
-
-    tbody.appendChild(tr);
+  select.innerHTML = `<option value="">Sin reunión</option>`;
+  filtradas.forEach(r => {
+    const key = reunionKey(r);
+    const opt = document.createElement("option");
+    opt.value = key; // guardaremos reunionKey en el compromiso
+    opt.textContent = `${r.fecha || ""} ${r.hora || ""} • ${r.tipo || "Reunión"} • ${r.lugar || ""}`;
+    select.appendChild(opt);
   });
 }
 
-// ====== ACCIONES ====== //
-function cambiarEstadoCompromiso(id, nuevoEstado, tbody) {
-  const comp = compromisos.find((c) => c.id === id);
-  if (!comp) return;
-  comp.estado = nuevoEstado;
-  guardarCompromisos();
-  renderCompromisos(tbody);
+function badgePrioridad(p) {
+  const v = (p || "").toString().toLowerCase();
+  const base = `display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900;`;
+  if (v === "alta") return `<span style="${base} background:#fee2e2; color:#991b1b;">Alta</span>`;
+  if (v === "media") return `<span style="${base} background:#fef9c3; color:#854d0e;">Media</span>`;
+  return `<span style="${base} background:#e5e7eb; color:#111827;">Baja</span>`;
 }
 
-function eliminarCompromiso(id, tbody) {
-  if (!confirm("¿Seguro que deseas eliminar este compromiso?")) return;
-  compromisos = compromisos.filter((c) => c.id !== id);
-  guardarCompromisos();
-  renderCompromisos(tbody);
+function badgeEstado(e) {
+  const v = (e || "").toString().toLowerCase();
+  const base = `display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900;`;
+  if (v.includes("cumpl")) return `<span style="${base} background:#dcfce7; color:#166534;">Cumplido</span>`;
+  if (v.includes("gestion")) return `<span style="${base} background:#dbeafe; color:#1e40af;">En gestión</span>`;
+  return `<span style="${base} background:#fef9c3; color:#854d0e;">Pendiente</span>`;
 }
+
+function resolverReunionTextoPorKey(comuna, rKey) {
+  if (!rKey) return "—";
+  const reuniones = getReuniones().filter(r => norm(r.comuna) === norm(comuna));
+  const r = reuniones.find(x => reunionKey(x) === rKey);
+  if (!r) return "—";
+  return `${r.fecha || ""} ${r.hora || ""} • ${r.tipo || "Reunión"}`;
+}
+
+function normalizarCompromiso(c) {
+  // ✅ Compatibilidad con registros viejos
+  return {
+    id: c.id || id("c"),
+    comuna: c.comuna || "",
+    liderKey: c.liderKey || "",                 // nuevo
+    liderNombre: c.liderNombre || c.lider || "",// viejo -> nuevo
+    reunionKey: c.reunionKey || "",             // nuevo
+    tipoCompromiso: c.tipoCompromiso || c.tipo || "",
+    estado: c.estado || "Pendiente",
+    prioridad: c.prioridad || "Media",
+    fecha: c.fecha || ""
+  };
+}
+
+function renderTabla(comuna) {
+  const tbody = document.getElementById("comp-tbody");
+  if (!tbody) return;
+
+  const compromisos = getCompromisos()
+    .map(normalizarCompromiso)
+    .filter(c => norm(c.comuna) === norm(comuna));
+
+  // guardamos normalizados (para evitar futuros nulls) SIN romper
+  saveCompromisos(compromisos.concat(
+    getCompromisos().map(normalizarCompromiso).filter(x => norm(x.comuna) !== norm(comuna))
+  ));
+
+  compromisos.sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+
+  if (!compromisos.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="small-text">No hay compromisos registrados.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = compromisos.map(c => {
+    const reunionTxt = resolverReunionTextoPorKey(comuna, c.reunionKey);
+    return `
+      <tr>
+        <td>${norm(c.fecha) || "—"}</td>
+        <td>${norm(c.liderNombre) || "—"}</td>
+        <td>${reunionTxt}</td>
+        <td>${norm(c.tipoCompromiso) || "—"}</td>
+        <td>${badgePrioridad(c.prioridad)}</td>
+        <td>${badgeEstado(c.estado)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function exportExcel(comuna) {
+  const compromisos = getCompromisos()
+    .map(normalizarCompromiso)
+    .filter(c => norm(c.comuna) === norm(comuna));
+
+  const rows = compromisos.map(c => ({
+    Comuna: c.comuna || "",
+    Fecha: c.fecha || "",
+    "Líder/Contacto": c.liderNombre || "",
+    "Tipo de compromiso": c.tipoCompromiso || "",
+    Estado: c.estado || "",
+    Prioridad: c.prioridad || "",
+    "Reunión": resolverReunionTextoPorKey(comuna, c.reunionKey)
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Compromisos");
+  XLSX.writeFile(wb, `Compromisos_${(comuna || "Comuna").replace(/\s+/g, "_")}.xlsx`);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sesion = getSesion();
+  const noSes = document.getElementById("no-session-section");
+  const sec = document.getElementById("compromisos-section");
+
+  if (!sesion?.username) {
+    if (sec) sec.style.display = "none";
+    if (noSes) noSes.style.display = "block";
+    return;
+  }
+
+  if (noSes) noSes.style.display = "none";
+  if (sec) sec.style.display = "block";
+
+  const datos = getDatos();
+  const comuna = comunaActiva(sesion, datos);
+
+  setText("comp-comuna-title", comuna);
+  setText("comp-user-info", `Sesión activa como: ${sesion.username}`);
+
+  // Selects
+  poblarSelectLider(comuna);
+  poblarSelectReunion(comuna, "");
+
+  const selLider = document.getElementById("comp-lider");
+  selLider?.addEventListener("change", () => {
+    poblarSelectReunion(comuna, selLider.value || "");
+  });
+
+  // Render inicial
+  renderTabla(comuna);
+
+  // Guardar
+  const form = document.getElementById("comp-form");
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const liderKey = norm(document.getElementById("comp-lider")?.value);
+    const reunionKeySel = norm(document.getElementById("comp-reunion")?.value);
+    const tipoCompromiso = norm(document.getElementById("comp-tipo")?.value);
+    const estado = norm(document.getElementById("comp-estado")?.value) || "Pendiente";
+    const prioridad = norm(document.getElementById("comp-prioridad")?.value) || "Media";
+    const fecha = norm(document.getElementById("comp-fecha")?.value);
+
+    if (!liderKey || !tipoCompromiso || !estado || !prioridad || !fecha) return;
+
+    // resolver nombre del líder a partir del select
+    const liderNombre = (function () {
+      if (liderKey.startsWith("name:")) return liderKey.slice(5);
+      if (liderKey.startsWith("id:")) {
+        const idVal = liderKey.slice(3);
+        const lideres = cargarLideresDeComuna(comuna);
+        return lideres.find(l => l.id === idVal)?.nombre || "";
+      }
+      return "";
+    })();
+
+    const comp = {
+      id: id("c"),
+      comuna,
+      liderKey,                 // nuevo
+      liderNombre: liderNombre || "Contacto",
+      reunionKey: reunionKeySel || "", // nuevo
+      tipoCompromiso,
+      estado,
+      prioridad,
+      fecha
+    };
+
+    const arr = getCompromisos();
+    arr.push(comp);
+    saveCompromisos(arr);
+
+    form.reset();
+    poblarSelectLider(comuna);
+    poblarSelectReunion(comuna, "");
+    renderTabla(comuna);
+  });
+
+  // Export
+  document.getElementById("btn-export-excel")?.addEventListener("click", () => {
+    exportExcel(comuna);
+  });
+});
