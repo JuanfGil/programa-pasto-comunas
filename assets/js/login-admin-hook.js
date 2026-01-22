@@ -1,34 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("login-form");
+  const errorEl = document.getElementById("login-error");
+
   if (!form || !window.PASTO_AUTH) return;
 
-  form.addEventListener(
-    "submit",
-    (e) => {
-      const username = (document.getElementById("username")?.value || "").trim();
-      const password = (document.getElementById("password")?.value || "").trim();
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-      const user = window.PASTO_AUTH.AUTH_USERS.find(
-        (u) => u.username === username && u.password === password
-      );
+    const username = (document.getElementById("username")?.value || "").trim();
+    const password = (document.getElementById("password")?.value || "").trim();
 
-      if (!user) return;
+    const user = window.PASTO_AUTH.authLogin(username, password);
 
-      // Si es admin/gerencia/coordinador: guardamos sesión, pero NO redirigimos
-      if (user.rol === "admin" || user.rol === "gerencia" || user.rol === "coordinador") {
-        e.preventDefault();
-        e.stopPropagation();
+    if (!user) {
+      if (errorEl) errorEl.style.display = "block";
+      return;
+    }
 
-        window.PASTO_AUTH.authGuardarSesion({
-          username: user.username,
-          rol: user.rol,
-          comuna: user.comuna
-        });
+    if (errorEl) errorEl.style.display = "none";
 
-        // Recargar para que tu app.js muestre la vista y el menú cambie por rol
-        window.location.reload();
-      }
-    },
-    true
-  );
+    // Recargar para que tu app detecte la sesión y muestre la comuna / menú
+    window.location.reload();
+  });
 });
