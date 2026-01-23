@@ -1,5 +1,5 @@
 // ======================================
-// COMPROMISOS.JS (compatible + aprobación global por rol)
+// COMPROMISOS.JS (aprobación global + filtro por comuna)
 // ======================================
 
 const LS_SESION = "pasto_sesion";
@@ -43,15 +43,12 @@ function isAprobadorGlobal(rol) {
 }
 
 function comunaActiva(sesion, datos) {
-  // Dinamizadores: su comuna
   if (sesion?.comuna && sesion.comuna !== "ALL") return sesion.comuna;
-  // Si es global, solo usamos una comuna "por defecto" para cargar el formulario,
-  // pero la tabla mostrará TODO.
   const keys = Object.keys(datos || {});
   return keys[0] || "Comuna 1";
 }
 
-// para conectar compromisos con reuniones sin tocar reuniones.js
+// Conectar compromisos con reuniones sin tocar reuniones.js
 function reunionKey(r) {
   const f = norm(r.fecha);
   const h = norm(r.hora);
@@ -157,7 +154,48 @@ function normalizarCompromiso(c) {
   };
 }
 
-function renderTabla(sesion, comunaBase) {
+function getListaComunasDesdeDatos() {
+  const datos = getDatos();
+  const comunas = Object.keys(datos || {});
+  // fallback por si aún no existe estructura por comuna
+  if (!comunas.length) {
+    return Array.from({ length: 12 }, (_, i) => `Comuna ${i + 1}`);
+  }
+  // ordenar por número si existe "Comuna 1..12"
+  return comunas.sort((a, b) => {
+    const na = parseInt((a.match(/\d+/) || ["0"])[0], 10);
+    const nb = parseInt((b.match(/\d+/) || ["0"])[0], 10);
+    return na - nb;
+  });
+}
+
+function poblarFiltroComunaSiAplica(sesion) {
+  const wrap = document.getElementById("comuna-filter-wrap");
+  const sel = document.getElementById("comp-filter-comuna");
+  if (!wrap || !sel) return;
+
+  const rol = (sesion?.rol || "").toLowerCase();
+  const aprobadorGlobal = isAprobadorGlobal(rol);
+
+  if (!aprobadorGlobal) {
+    wrap.style.display = "none";
+    return;
+  }
+
+  wrap.style.display = "block";
+  sel.innerHTML = `<option value="__ALL__">Todas las comunas</option>`;
+
+  const comunas = getListaComunasDesdeDatos();
+  comunas.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+// 🔥 Render con filtro: ALL o comuna específica
+function renderTabla(sesion, comunaBase, filtroComuna) {
   const tbody = document.getElementById("comp-tbody");
   if (!tbody) return;
 
@@ -166,16 +204,25 @@ function renderTabla(sesion, comunaBase) {
 
   const all = getCompromisos().map(normalizarCompromiso);
 
-  // ✅ Si es admin/gerencia/coordinador: ver TODO
-  // ✅ Si es dinamizador: ver solo su comuna
-  const data = aprobadorGlobal
-    ? all
-    : all.filter(c => norm(c.comuna) === norm(comunaBase));
+  let data;
+  if (aprobadorGlobal) {
+    if (filtroComuna && filtroComuna !== "__ALL__") {
+      data = all.filter(c => norm(c.comuna) === norm(filtroComuna));
+    } else {
+      data = all;
+    }
+  } else {
+    data = all.filter(c => norm(c.comuna) === norm(comunaBase));
+  }
 
-  data.sort((a,b) => (b.fecha || "").localeCompare(a.fecha || ""));
+  data.sort((a,b) => {
+    const cf = (b.fecha || "").localeCompare(a.fecha || "");
+    if (cf !== 0) return cf;
+    return (a.comuna || "").localeCompare(b.comuna || "");
+  });
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="small-text">No hay compromisos registrados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="small-text">No hay compromisos registrados.</td></tr>`;
     return;
   }
 
@@ -187,6 +234,7 @@ function renderTabla(sesion, comunaBase) {
 
     return `
       <tr>
+        <td>${norm(c.comuna) || "—"}</td>
         <td>${norm(c.fecha) || "—"}</td>
         <td>${norm(c.liderNombre) || "—"}</td>
         <td>${reunionTxt}</td>
@@ -200,7 +248,7 @@ function renderTabla(sesion, comunaBase) {
     `;
   }).join("");
 
-  // ✅ Toggle aprobación (solo global)
+  // Toggle aprobación (solo global)
   tbody.querySelectorAll('input[type="checkbox"][data-comp-id]').forEach(chk => {
     chk.addEventListener("change", (e) => {
       if (!aprobadorGlobal) return;
@@ -217,17 +265,31 @@ function renderTabla(sesion, comunaBase) {
       arr[idx].aprobadoFecha = nuevoValor ? new Date().toISOString() : "";
 
       saveCompromisos(arr);
-      renderTabla(sesion, comunaBase);
+
+      // Re-render manteniendo filtro actual
+      const selFiltro = document.getElementById("comp-filter-comuna");
+      const filtro = selFiltro ? selFiltro.value : "__ALL__";
+      renderTabla(sesion, comunaBase, filtro);
     });
   });
 }
 
-function exportExcel(sesion, comunaBase) {
+function exportExcel(sesion, comunaBase, filtroComuna) {
   const rol = (sesion?.rol || "").toLowerCase();
   const aprobadorGlobal = isAprobadorGlobal(rol);
 
   const all = getCompromisos().map(normalizarCompromiso);
-  const data = aprobadorGlobal ? all : all.filter(c => norm(c.comuna) === norm(comunaBase));
+  let data;
+
+  if (aprobadorGlobal) {
+    if (filtroComuna && filtroComuna !== "__ALL__") {
+      data = all.filter(c => norm(c.comuna) === norm(filtroComuna));
+    } else {
+      data = all;
+    }
+  } else {
+    data = all.filter(c => norm(c.comuna) === norm(comunaBase));
+  }
 
   const rows = data.map(c => ({
     Comuna: c.comuna || "",
@@ -245,10 +307,15 @@ function exportExcel(sesion, comunaBase) {
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Compromisos");
-  XLSX.writeFile(
-    wb,
-    `Compromisos_${(aprobadorGlobal ? "TODAS" : comunaBase).replace(/\s+/g, "_")}.xlsx`
-  );
+
+  let nombre;
+  if (aprobadorGlobal) {
+    nombre = (filtroComuna && filtroComuna !== "__ALL__") ? filtroComuna : "TODAS";
+  } else {
+    nombre = comunaBase;
+  }
+
+  XLSX.writeFile(wb, `Compromisos_${String(nombre).replace(/\s+/g, "_")}.xlsx`);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -275,8 +342,18 @@ document.addEventListener("DOMContentLoaded", () => {
   setText("comp-comuna-title", aprobadorGlobal ? "TODAS LAS COMUNAS" : comunaBase);
   setText("comp-user-info", `Sesión activa como: ${sesion.username} (${sesion.rol})`);
 
-  // Form: si es global, igual cargamos líderes/reuniones de la comuna base para registrar;
-  // la aprobación se hace en la tabla global.
+  // ✅ Filtro por comuna para aprobadores
+  poblarFiltroComunaSiAplica(sesion);
+
+  const selFiltro = document.getElementById("comp-filter-comuna");
+  if (selFiltro && aprobadorGlobal) {
+    selFiltro.addEventListener("change", () => {
+      const filtro = selFiltro.value;
+      renderTabla(sesion, comunaBase, filtro);
+    });
+  }
+
+  // Form (se mantiene por comuna base)
   poblarSelectLider(comunaBase);
   poblarSelectReunion(comunaBase, "");
 
@@ -285,7 +362,9 @@ document.addEventListener("DOMContentLoaded", () => {
     poblarSelectReunion(comunaBase, selLider.value || "");
   });
 
-  renderTabla(sesion, comunaBase);
+  // Render inicial (con filtro si existe)
+  const filtroInicial = selFiltro ? selFiltro.value : "__ALL__";
+  renderTabla(sesion, comunaBase, filtroInicial);
 
   document.getElementById("comp-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -331,10 +410,13 @@ document.addEventListener("DOMContentLoaded", () => {
     e.target.reset();
     poblarSelectLider(comunaBase);
     poblarSelectReunion(comunaBase, "");
-    renderTabla(sesion, comunaBase);
+
+    const filtroActual = selFiltro ? selFiltro.value : "__ALL__";
+    renderTabla(sesion, comunaBase, filtroActual);
   });
 
   document.getElementById("btn-export-excel")?.addEventListener("click", () => {
-    exportExcel(sesion, comunaBase);
+    const filtroActual = selFiltro ? selFiltro.value : "__ALL__";
+    exportExcel(sesion, comunaBase, filtroActual);
   });
 });
