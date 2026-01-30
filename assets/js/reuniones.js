@@ -51,7 +51,7 @@ function normalizarPrioridad(p) {
   const v = (p || "").toString().trim().toLowerCase();
   if (v === "alta") return "Alta";
   if (v === "baja") return "Baja";
-  return "Media"; // default seguro
+  return "Media";
 }
 
 function badgePrioridad(p) {
@@ -60,6 +60,16 @@ function badgePrioridad(p) {
   if (v === "alta") return `<span style="${base} background:#fee2e2; color:#991b1b;">Alta</span>`;
   if (v === "baja") return `<span style="${base} background:#e5e7eb; color:#111827;">Baja</span>`;
   return `<span style="${base} background:#fef9c3; color:#854d0e;">Media</span>`;
+}
+
+// ✅ NUEVO: parse número personas
+function parseNumPersonas(v) {
+  const s = (v ?? "").toString().trim();
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  if (n < 0) return 0;
+  return Math.floor(n);
 }
 
 // ====== INICIO PÁGINA ====== //
@@ -90,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (noSessionSection) noSessionSection.style.display = "none";
   if (reunionesSection) reunionesSection.style.display = "block";
 
-  // Manejo de formulario
   if (reunionForm) {
     reunionForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -103,13 +112,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const horaInput = document.getElementById("reunion-hora");
       const lugarInput = document.getElementById("reunion-lugar");
       const tipoInput = document.getElementById("reunion-tipo");
-      const prioridadInput = document.getElementById("reunion-prioridad"); // ✅ NUEVO
+      const prioridadInput = document.getElementById("reunion-prioridad");
+      const numInput = document.getElementById("reunion-num-personas"); // ✅ NUEVO
 
       const fecha = (fechaInput?.value || "").trim();
       const hora = (horaInput?.value || "").trim();
       const lugar = (lugarInput?.value || "").trim();
       const tipo = (tipoInput?.value || "").trim();
-      const prioridad = normalizarPrioridad(prioridadInput?.value || "Media"); // ✅ NUEVO
+      const prioridad = normalizarPrioridad(prioridadInput?.value || "Media");
+      const numPersonas = parseNumPersonas(numInput?.value); // ✅ NUEVO
 
       if (!fecha || !hora || !lugar) {
         alert("Por favor diligencia fecha, hora y lugar.");
@@ -124,7 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
         hora,
         lugar,
         tipo: tipo || "Organización",
-        prioridad, // ✅ NUEVO
+        prioridad,
+        numPersonas, // ✅ NUEVO
         estado: "pendiente",
         fechaCreacion: new Date().toISOString(),
       };
@@ -136,7 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (horaInput) horaInput.value = "";
       if (lugarInput) lugarInput.value = "";
       if (tipoInput) tipoInput.value = "Motivación";
-      if (prioridadInput) prioridadInput.value = "Media"; // ✅ NUEVO
+      if (prioridadInput) prioridadInput.value = "Media";
+      if (numInput) numInput.value = ""; // ✅ NUEVO
 
       renderReuniones(tbodyReuniones);
     });
@@ -173,18 +186,16 @@ function renderReuniones(tbody) {
     .filter((r) => r.comuna === comunaActual)
     .map((r) => ({
       ...r,
-      prioridad: normalizarPrioridad(r.prioridad || "Media"), // ✅ compatibilidad con reuniones antiguas
+      prioridad: normalizarPrioridad(r.prioridad || "Media"),
+      numPersonas: (r.numPersonas === undefined ? null : r.numPersonas), // compat
     }));
-
-  // Persistimos normalización solo si faltaba (opcional, pero seguro)
-  // (No lo forzamos guardando aquí para no generar escrituras innecesarias)
 
   actualizarResumenReuniones(reunionesComuna);
 
   if (reunionesComuna.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 7; // ✅ ahora son 7 columnas
+    td.colSpan = 8; // ✅ ahora son 8 columnas
     td.textContent = "Aún no hay reuniones registradas para esta comuna.";
     td.className = "small-text";
     tr.appendChild(td);
@@ -213,9 +224,15 @@ function renderReuniones(tbody) {
       const tdTipo = document.createElement("td");
       tdTipo.textContent = reunion.tipo || "";
 
-      // ✅ NUEVO: Prioridad (badge)
       const tdPrioridad = document.createElement("td");
       tdPrioridad.innerHTML = badgePrioridad(reunion.prioridad);
+
+      // ✅ NUEVO: num personas
+      const tdNum = document.createElement("td");
+      tdNum.textContent =
+        reunion.numPersonas === null || reunion.numPersonas === undefined
+          ? "—"
+          : String(reunion.numPersonas);
 
       // ---- Estado con pastilla de color ----
       const tdEstado = document.createElement("td");
@@ -308,7 +325,8 @@ function renderReuniones(tbody) {
       tr.appendChild(tdHora);
       tr.appendChild(tdLugar);
       tr.appendChild(tdTipo);
-      tr.appendChild(tdPrioridad); // ✅ NUEVO
+      tr.appendChild(tdPrioridad);
+      tr.appendChild(tdNum); // ✅ NUEVO
       tr.appendChild(tdEstado);
       tr.appendChild(tdAcciones);
 
