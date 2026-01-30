@@ -62,7 +62,6 @@ function badgePrioridad(p) {
   return `<span style="${base} background:#fef9c3; color:#854d0e;">Media</span>`;
 }
 
-// ✅ NUEVO: parse número personas
 function parseNumPersonas(v) {
   const s = (v ?? "").toString().trim();
   if (!s) return null;
@@ -70,6 +69,11 @@ function parseNumPersonas(v) {
   if (!Number.isFinite(n)) return null;
   if (n < 0) return 0;
   return Math.floor(n);
+}
+
+function normText(v) {
+  const s = (v ?? "").toString().trim();
+  return s;
 }
 
 // ====== INICIO PÁGINA ====== //
@@ -114,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const tipoInput = document.getElementById("reunion-tipo");
       const prioridadInput = document.getElementById("reunion-prioridad");
       const numInput = document.getElementById("reunion-num-personas");
+      const respInput = document.getElementById("reunion-responsable"); // ✅ NUEVO
 
       const fecha = (fechaInput?.value || "").trim();
       const hora = (horaInput?.value || "").trim();
@@ -121,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const tipo = (tipoInput?.value || "").trim();
       const prioridad = normalizarPrioridad(prioridadInput?.value || "Media");
       const numPersonas = parseNumPersonas(numInput?.value);
+      const responsable = normText(respInput?.value); // ✅ NUEVO
 
       if (!fecha || !hora || !lugar) {
         alert("Por favor diligencia fecha, hora y lugar.");
@@ -137,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tipo: tipo || "Organización",
         prioridad,
         numPersonas,
+        responsable, // ✅ NUEVO
         estado: "pendiente",
         fechaCreacion: new Date().toISOString(),
       };
@@ -150,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (tipoInput) tipoInput.value = "Motivación";
       if (prioridadInput) prioridadInput.value = "Media";
       if (numInput) numInput.value = "";
+      if (respInput) respInput.value = ""; // ✅ NUEVO
 
       renderReuniones(tbodyReuniones);
     });
@@ -188,6 +196,7 @@ function renderReuniones(tbody) {
       ...r,
       prioridad: normalizarPrioridad(r.prioridad || "Media"),
       numPersonas: (r.numPersonas === undefined ? null : r.numPersonas),
+      responsable: normText(r.responsable || ""), // compat
     }));
 
   actualizarResumenReuniones(reunionesComuna);
@@ -195,7 +204,7 @@ function renderReuniones(tbody) {
   if (reunionesComuna.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 8;
+    td.colSpan = 9; // ✅ ahora son 9 columnas
     td.textContent = "Aún no hay reuniones registradas para esta comuna.";
     td.className = "small-text";
     tr.appendChild(td);
@@ -233,9 +242,13 @@ function renderReuniones(tbody) {
           ? "—"
           : String(reunion.numPersonas);
 
-      // ---- Estado con pastilla de color ----
+      // ✅ NUEVO: Responsable
+      const tdResp = document.createElement("td");
+      tdResp.textContent = reunion.responsable ? reunion.responsable : "—";
+
+      // ---- Estado ----
       const tdEstado = document.createElement("td");
-      tdEstado.classList.add("col-estado"); // ✅ CLAVE para que aplique tu CSS
+      tdEstado.classList.add("col-estado");
 
       const estadoBadge = document.createElement("span");
       estadoBadge.classList.add("estado-badge");
@@ -269,13 +282,13 @@ function renderReuniones(tbody) {
 
       // ---- Acciones ----
       const tdAcciones = document.createElement("td");
-      tdAcciones.classList.add("col-acciones"); // ✅ CLAVE para que aplique tu CSS
+      tdAcciones.classList.add("col-acciones");
 
       const contBtns = document.createElement("div");
       contBtns.className = "reuniones-acciones";
       contBtns.style.display = "flex";
       contBtns.style.flexDirection = "column";
-      contBtns.style.alignItems = "stretch"; // ✅ evita “corridos”
+      contBtns.style.alignItems = "stretch";
       contBtns.style.gap = "6px";
 
       const btnPendiente = document.createElement("button");
@@ -326,6 +339,7 @@ function renderReuniones(tbody) {
       tr.appendChild(tdTipo);
       tr.appendChild(tdPrioridad);
       tr.appendChild(tdNum);
+      tr.appendChild(tdResp); // ✅ NUEVO
       tr.appendChild(tdEstado);
       tr.appendChild(tdAcciones);
 
