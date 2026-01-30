@@ -34,7 +34,6 @@
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <!-- ✅ Filtro por comuna (solo para aprobadores globales) -->
           <div id="comuna-filter-wrap" class="form-group" style="margin:0; min-width:220px; display:none;">
             <label for="comp-filter-comuna" style="margin-bottom:6px;">Filtrar por comuna</label>
             <select id="comp-filter-comuna">
@@ -67,6 +66,12 @@
           <div class="form-group">
             <label for="comp-tipo">Tipo de compromiso</label>
             <input id="comp-tipo" type="text" required placeholder="Ej: logística, sonido, transporte..." />
+          </div>
+
+          <!-- ✅ NUEVO: Responsable -->
+          <div class="form-group">
+            <label for="comp-responsable">Responsable del compromiso</label>
+            <input id="comp-responsable" type="text" placeholder="Ej: Juan, Ana, Equipo logístico..." />
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -109,6 +114,7 @@
                 <th>Líder/Contacto</th>
                 <th>Reunión</th>
                 <th>Tipo</th>
+                <th>Responsable</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Aprobado</th>
