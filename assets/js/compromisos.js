@@ -1,6 +1,6 @@
 // ======================================
 // COMPROMISOS.JS (aprobación global + filtro por comuna)
-// + Eliminar SOLO Teresa (admin)
+// + Eliminar SOLO Teresa (admin) - FIX robusto con delegación
 // ======================================
 
 const LS_SESION = "pasto_sesion";
@@ -43,7 +43,7 @@ function isAprobadorGlobal(rol) {
   return r === "admin" || r === "gerencia" || r === "coordinador";
 }
 
-// 🔒 Solo Teresa puede eliminar
+// 🔒 Solo Teresa puede eliminar (doble validación)
 function isTeresaAdmin(sesion) {
   const u = (sesion?.username || "").toLowerCase();
   const r = (sesion?.rol || "").toLowerCase();
@@ -165,9 +165,7 @@ function normalizarCompromiso(c) {
 function getListaComunasDesdeDatos() {
   const datos = getDatos();
   const comunas = Object.keys(datos || {});
-  if (!comunas.length) {
-    return Array.from({ length: 12 }, (_, i) => `Comuna ${i + 1}`);
-  }
+  if (!comunas.length) return Array.from({ length: 12 }, (_, i) => `Comuna ${i + 1}`);
   return comunas.sort((a, b) => {
     const na = parseInt((a.match(/\d+/) || ["0"])[0], 10);
     const nb = parseInt((b.match(/\d+/) || ["0"])[0], 10);
@@ -191,8 +189,7 @@ function poblarFiltroComunaSiAplica(sesion) {
   wrap.style.display = "block";
   sel.innerHTML = `<option value="__ALL__">Todas las comunas</option>`;
 
-  const comunas = getListaComunasDesdeDatos();
-  comunas.forEach(c => {
+  getListaComunasDesdeDatos().forEach(c => {
     const opt = document.createElement("option");
     opt.value = c;
     opt.textContent = c;
@@ -200,24 +197,17 @@ function poblarFiltroComunaSiAplica(sesion) {
   });
 }
 
-// 🔥 Render con filtro: ALL o comuna específica
-function renderTabla(sesion, comunaBase, filtroComuna) {
-  const tbody = document.getElementById("comp-tbody");
-  if (!tbody) return;
-
+function getTablaFiltrada(sesion, comunaBase, filtroComuna) {
   const rol = (sesion?.rol || "").toLowerCase();
   const aprobadorGlobal = isAprobadorGlobal(rol);
-  const puedeEliminar = isTeresaAdmin(sesion);
 
   const all = getCompromisos().map(normalizarCompromiso);
 
   let data;
   if (aprobadorGlobal) {
-    if (filtroComuna && filtroComuna !== "__ALL__") {
-      data = all.filter(c => norm(c.comuna) === norm(filtroComuna));
-    } else {
-      data = all;
-    }
+    data = (filtroComuna && filtroComuna !== "__ALL__")
+      ? all.filter(c => norm(c.comuna) === norm(filtroComuna))
+      : all;
   } else {
     data = all.filter(c => norm(c.comuna) === norm(comunaBase));
   }
@@ -227,6 +217,17 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
     if (cf !== 0) return cf;
     return (a.comuna || "").localeCompare(b.comuna || "");
   });
+
+  return { data, aprobadorGlobal };
+}
+
+// 🔥 Render tabla
+function renderTabla(sesion, comunaBase, filtroComuna) {
+  const tbody = document.getElementById("comp-tbody");
+  if (!tbody) return;
+
+  const { data, aprobadorGlobal } = getTablaFiltrada(sesion, comunaBase, filtroComuna);
+  const puedeEliminar = isTeresaAdmin(sesion);
 
   if (!data.length) {
     tbody.innerHTML = `<tr><td colspan="9" class="small-text">No hay compromisos registrados.</td></tr>`;
@@ -239,7 +240,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
     const disabled = aprobadorGlobal ? "" : "disabled";
     const title = c.aprobado ? `Aprobado por: ${c.aprobadoPor || "—"}` : "No aprobado";
 
-    const btnEliminar = puedeEliminar
+    const acciones = puedeEliminar
       ? `<button type="button" class="btn-secondary" data-del-comp-id="${c.id}" style="font-size:11px; padding:3px 10px;">Eliminar</button>`
       : `<span class="small-text">—</span>`;
 
@@ -255,58 +256,10 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
         <td style="text-align:center;">
           <input type="checkbox" data-comp-id="${c.id}" ${checked} ${disabled} title="${title}">
         </td>
-        <td>${btnEliminar}</td>
+        <td>${acciones}</td>
       </tr>
     `;
   }).join("");
-
-  // Toggle aprobación (solo global)
-  tbody.querySelectorAll('input[type="checkbox"][data-comp-id]').forEach(chk => {
-    chk.addEventListener("change", (e) => {
-      if (!aprobadorGlobal) return;
-
-      const compId = e.target.getAttribute("data-comp-id");
-      const nuevoValor = !!e.target.checked;
-
-      const arr = getCompromisos().map(normalizarCompromiso);
-      const idx = arr.findIndex(x => x.id === compId);
-      if (idx === -1) return;
-
-      arr[idx].aprobado = nuevoValor;
-      arr[idx].aprobadoPor = nuevoValor ? (sesion.username || "") : "";
-      arr[idx].aprobadoFecha = nuevoValor ? new Date().toISOString() : "";
-
-      saveCompromisos(arr);
-
-      const selFiltro = document.getElementById("comp-filter-comuna");
-      const filtro = selFiltro ? selFiltro.value : "__ALL__";
-      renderTabla(sesion, comunaBase, filtro);
-    });
-  });
-
-  // 🔥 Eliminar (solo Teresa)
-  tbody.querySelectorAll('button[data-del-comp-id]').forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      // doble validación (por si alguien intenta forzar el botón)
-      if (!isTeresaAdmin(sesion)) {
-        alert("Acción no permitida.");
-        return;
-      }
-
-      const compId = e.currentTarget.getAttribute("data-del-comp-id");
-      if (!compId) return;
-
-      if (!confirm("¿Seguro que deseas eliminar este compromiso?")) return;
-
-      const arr = getCompromisos().map(normalizarCompromiso);
-      const nuevo = arr.filter(x => x.id !== compId);
-      saveCompromisos(nuevo);
-
-      const selFiltro = document.getElementById("comp-filter-comuna");
-      const filtro = selFiltro ? selFiltro.value : "__ALL__";
-      renderTabla(sesion, comunaBase, filtro);
-    });
-  });
 }
 
 function exportExcel(sesion, comunaBase, filtroComuna) {
@@ -317,11 +270,9 @@ function exportExcel(sesion, comunaBase, filtroComuna) {
   let data;
 
   if (aprobadorGlobal) {
-    if (filtroComuna && filtroComuna !== "__ALL__") {
-      data = all.filter(c => norm(c.comuna) === norm(filtroComuna));
-    } else {
-      data = all;
-    }
+    data = (filtroComuna && filtroComuna !== "__ALL__")
+      ? all.filter(c => norm(c.comuna) === norm(filtroComuna))
+      : all;
   } else {
     data = all.filter(c => norm(c.comuna) === norm(comunaBase));
   }
@@ -344,11 +295,8 @@ function exportExcel(sesion, comunaBase, filtroComuna) {
   XLSX.utils.book_append_sheet(wb, ws, "Compromisos");
 
   let nombre;
-  if (aprobadorGlobal) {
-    nombre = (filtroComuna && filtroComuna !== "__ALL__") ? filtroComuna : "TODAS";
-  } else {
-    nombre = comunaBase;
-  }
+  if (aprobadorGlobal) nombre = (filtroComuna && filtroComuna !== "__ALL__") ? filtroComuna : "TODAS";
+  else nombre = comunaBase;
 
   XLSX.writeFile(wb, `Compromisos_${String(nombre).replace(/\s+/g, "_")}.xlsx`);
 }
@@ -373,22 +321,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const rol = (sesion.rol || "").toLowerCase();
   const aprobadorGlobal = isAprobadorGlobal(rol);
 
-  // UI info
   setText("comp-comuna-title", aprobadorGlobal ? "TODAS LAS COMUNAS" : comunaBase);
   setText("comp-user-info", `Sesión activa como: ${sesion.username} (${sesion.rol})`);
 
-  // ✅ Filtro por comuna para aprobadores
   poblarFiltroComunaSiAplica(sesion);
 
   const selFiltro = document.getElementById("comp-filter-comuna");
   if (selFiltro && aprobadorGlobal) {
     selFiltro.addEventListener("change", () => {
-      const filtro = selFiltro.value;
-      renderTabla(sesion, comunaBase, filtro);
+      renderTabla(sesion, comunaBase, selFiltro.value);
     });
   }
 
-  // Form (se mantiene por comuna base)
+  // Poblar selects
   poblarSelectLider(comunaBase);
   poblarSelectReunion(comunaBase, "");
 
@@ -397,9 +342,61 @@ document.addEventListener("DOMContentLoaded", () => {
     poblarSelectReunion(comunaBase, selLider.value || "");
   });
 
-  // Render inicial (con filtro si existe)
+  // Render inicial
   const filtroInicial = selFiltro ? selFiltro.value : "__ALL__";
   renderTabla(sesion, comunaBase, filtroInicial);
+
+  // ✅ Delegación de eventos: aprobar + eliminar (siempre funciona aunque se re-renderice)
+  const tbody = document.getElementById("comp-tbody");
+  tbody?.addEventListener("click", (ev) => {
+    const target = ev.target;
+
+    // Eliminar
+    const delBtn = target?.closest?.("button[data-del-comp-id]");
+    if (delBtn) {
+      if (!isTeresaAdmin(sesion)) {
+        alert("Acción no permitida.");
+        return;
+      }
+
+      const compId = delBtn.getAttribute("data-del-comp-id");
+      if (!compId) return;
+
+      if (!confirm("¿Seguro que deseas eliminar este compromiso?")) return;
+
+      // importante: operar sobre el array REAL del storage
+      const raw = getCompromisos();
+      const nuevo = raw.filter(x => (x?.id || "") !== compId);
+      saveCompromisos(nuevo);
+
+      const filtro = selFiltro ? selFiltro.value : "__ALL__";
+      renderTabla(sesion, comunaBase, filtro);
+      return;
+    }
+  });
+
+  // Aprobación (change) - delegación por evento change
+  tbody?.addEventListener("change", (ev) => {
+    const chk = ev.target;
+    if (!chk || chk.type !== "checkbox" || !chk.hasAttribute("data-comp-id")) return;
+    if (!aprobadorGlobal) return;
+
+    const compId = chk.getAttribute("data-comp-id");
+    const nuevoValor = !!chk.checked;
+
+    const arr = getCompromisos().map(normalizarCompromiso);
+    const idx = arr.findIndex(x => x.id === compId);
+    if (idx === -1) return;
+
+    arr[idx].aprobado = nuevoValor;
+    arr[idx].aprobadoPor = nuevoValor ? (sesion.username || "") : "";
+    arr[idx].aprobadoFecha = nuevoValor ? new Date().toISOString() : "";
+
+    saveCompromisos(arr);
+
+    const filtro = selFiltro ? selFiltro.value : "__ALL__";
+    renderTabla(sesion, comunaBase, filtro);
+  });
 
   document.getElementById("comp-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -446,12 +443,12 @@ document.addEventListener("DOMContentLoaded", () => {
     poblarSelectLider(comunaBase);
     poblarSelectReunion(comunaBase, "");
 
-    const filtroActual = selFiltro ? selFiltro.value : "__ALL__";
-    renderTabla(sesion, comunaBase, filtroActual);
+    const filtro = selFiltro ? selFiltro.value : "__ALL__";
+    renderTabla(sesion, comunaBase, filtro);
   });
 
   document.getElementById("btn-export-excel")?.addEventListener("click", () => {
-    const filtroActual = selFiltro ? selFiltro.value : "__ALL__";
-    exportExcel(sesion, comunaBase, filtroActual);
+    const filtro = selFiltro ? selFiltro.value : "__ALL__";
+    exportExcel(sesion, comunaBase, filtro);
   });
 });
