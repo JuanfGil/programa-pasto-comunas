@@ -46,6 +46,22 @@ function guardarReuniones() {
   }
 }
 
+// ====== UI: PRIORIDAD ====== //
+function normalizarPrioridad(p) {
+  const v = (p || "").toString().trim().toLowerCase();
+  if (v === "alta") return "Alta";
+  if (v === "baja") return "Baja";
+  return "Media"; // default seguro
+}
+
+function badgePrioridad(p) {
+  const v = normalizarPrioridad(p).toLowerCase();
+  const base = `display:inline-flex; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; white-space:nowrap;`;
+  if (v === "alta") return `<span style="${base} background:#fee2e2; color:#991b1b;">Alta</span>`;
+  if (v === "baja") return `<span style="${base} background:#e5e7eb; color:#111827;">Baja</span>`;
+  return `<span style="${base} background:#fef9c3; color:#854d0e;">Media</span>`;
+}
+
 // ====== INICIO PÁGINA ====== //
 document.addEventListener("DOMContentLoaded", () => {
   const noSessionSection = document.getElementById("no-session-section");
@@ -87,11 +103,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const horaInput = document.getElementById("reunion-hora");
       const lugarInput = document.getElementById("reunion-lugar");
       const tipoInput = document.getElementById("reunion-tipo");
+      const prioridadInput = document.getElementById("reunion-prioridad"); // ✅ NUEVO
 
-      const fecha = (fechaInput.value || "").trim();
-      const hora = (horaInput.value || "").trim();
-      const lugar = (lugarInput.value || "").trim();
-      const tipo = (tipoInput.value || "").trim();
+      const fecha = (fechaInput?.value || "").trim();
+      const hora = (horaInput?.value || "").trim();
+      const lugar = (lugarInput?.value || "").trim();
+      const tipo = (tipoInput?.value || "").trim();
+      const prioridad = normalizarPrioridad(prioridadInput?.value || "Media"); // ✅ NUEVO
 
       if (!fecha || !hora || !lugar) {
         alert("Por favor diligencia fecha, hora y lugar.");
@@ -106,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hora,
         lugar,
         tipo: tipo || "Organización",
+        prioridad, // ✅ NUEVO
         estado: "pendiente",
         fechaCreacion: new Date().toISOString(),
       };
@@ -113,10 +132,11 @@ document.addEventListener("DOMContentLoaded", () => {
       reuniones.push(nuevaReunion);
       guardarReuniones();
 
-      fechaInput.value = "";
-      horaInput.value = "";
-      lugarInput.value = "";
-      tipoInput.value = "Motivación";
+      if (fechaInput) fechaInput.value = "";
+      if (horaInput) horaInput.value = "";
+      if (lugarInput) lugarInput.value = "";
+      if (tipoInput) tipoInput.value = "Motivación";
+      if (prioridadInput) prioridadInput.value = "Media"; // ✅ NUEVO
 
       renderReuniones(tbodyReuniones);
     });
@@ -149,15 +169,22 @@ function renderReuniones(tbody) {
 
   tbody.innerHTML = "";
 
-  const reunionesComuna = reuniones.filter((r) => r.comuna === comunaActual);
+  const reunionesComuna = reuniones
+    .filter((r) => r.comuna === comunaActual)
+    .map((r) => ({
+      ...r,
+      prioridad: normalizarPrioridad(r.prioridad || "Media"), // ✅ compatibilidad con reuniones antiguas
+    }));
 
-  // Actualizar resumen
+  // Persistimos normalización solo si faltaba (opcional, pero seguro)
+  // (No lo forzamos guardando aquí para no generar escrituras innecesarias)
+
   actualizarResumenReuniones(reunionesComuna);
 
   if (reunionesComuna.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 7; // ✅ ahora son 7 columnas
     td.textContent = "Aún no hay reuniones registradas para esta comuna.";
     td.className = "small-text";
     tr.appendChild(td);
@@ -185,6 +212,10 @@ function renderReuniones(tbody) {
 
       const tdTipo = document.createElement("td");
       tdTipo.textContent = reunion.tipo || "";
+
+      // ✅ NUEVO: Prioridad (badge)
+      const tdPrioridad = document.createElement("td");
+      tdPrioridad.innerHTML = badgePrioridad(reunion.prioridad);
 
       // ---- Estado con pastilla de color ----
       const tdEstado = document.createElement("td");
@@ -277,6 +308,7 @@ function renderReuniones(tbody) {
       tr.appendChild(tdHora);
       tr.appendChild(tdLugar);
       tr.appendChild(tdTipo);
+      tr.appendChild(tdPrioridad); // ✅ NUEVO
       tr.appendChild(tdEstado);
       tr.appendChild(tdAcciones);
 
