@@ -113,14 +113,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const lugarInput = document.getElementById("reunion-lugar");
       const tipoInput = document.getElementById("reunion-tipo");
       const prioridadInput = document.getElementById("reunion-prioridad");
-      const numInput = document.getElementById("reunion-num-personas"); // ✅ NUEVO
+      const numInput = document.getElementById("reunion-num-personas");
 
       const fecha = (fechaInput?.value || "").trim();
       const hora = (horaInput?.value || "").trim();
       const lugar = (lugarInput?.value || "").trim();
       const tipo = (tipoInput?.value || "").trim();
       const prioridad = normalizarPrioridad(prioridadInput?.value || "Media");
-      const numPersonas = parseNumPersonas(numInput?.value); // ✅ NUEVO
+      const numPersonas = parseNumPersonas(numInput?.value);
 
       if (!fecha || !hora || !lugar) {
         alert("Por favor diligencia fecha, hora y lugar.");
@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
         lugar,
         tipo: tipo || "Organización",
         prioridad,
-        numPersonas, // ✅ NUEVO
+        numPersonas,
         estado: "pendiente",
         fechaCreacion: new Date().toISOString(),
       };
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (lugarInput) lugarInput.value = "";
       if (tipoInput) tipoInput.value = "Motivación";
       if (prioridadInput) prioridadInput.value = "Media";
-      if (numInput) numInput.value = ""; // ✅ NUEVO
+      if (numInput) numInput.value = "";
 
       renderReuniones(tbodyReuniones);
     });
@@ -187,7 +187,7 @@ function renderReuniones(tbody) {
     .map((r) => ({
       ...r,
       prioridad: normalizarPrioridad(r.prioridad || "Media"),
-      numPersonas: (r.numPersonas === undefined ? null : r.numPersonas), // compat
+      numPersonas: (r.numPersonas === undefined ? null : r.numPersonas),
     }));
 
   actualizarResumenReuniones(reunionesComuna);
@@ -195,7 +195,7 @@ function renderReuniones(tbody) {
   if (reunionesComuna.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 8; // ✅ ahora son 8 columnas
+    td.colSpan = 8;
     td.textContent = "Aún no hay reuniones registradas para esta comuna.";
     td.className = "small-text";
     tr.appendChild(td);
@@ -227,7 +227,6 @@ function renderReuniones(tbody) {
       const tdPrioridad = document.createElement("td");
       tdPrioridad.innerHTML = badgePrioridad(reunion.prioridad);
 
-      // ✅ NUEVO: num personas
       const tdNum = document.createElement("td");
       tdNum.textContent =
         reunion.numPersonas === null || reunion.numPersonas === undefined
@@ -236,7 +235,7 @@ function renderReuniones(tbody) {
 
       // ---- Estado con pastilla de color ----
       const tdEstado = document.createElement("td");
-      tdEstado.classList.add("col-estado");
+      tdEstado.classList.add("col-estado"); // ✅ CLAVE para que aplique tu CSS
 
       const estadoBadge = document.createElement("span");
       estadoBadge.classList.add("estado-badge");
@@ -270,13 +269,13 @@ function renderReuniones(tbody) {
 
       // ---- Acciones ----
       const tdAcciones = document.createElement("td");
-      tdAcciones.classList.add("col-acciones");
+      tdAcciones.classList.add("col-acciones"); // ✅ CLAVE para que aplique tu CSS
 
       const contBtns = document.createElement("div");
       contBtns.className = "reuniones-acciones";
       contBtns.style.display = "flex";
       contBtns.style.flexDirection = "column";
-      contBtns.style.alignItems = "flex-start";
+      contBtns.style.alignItems = "stretch"; // ✅ evita “corridos”
       contBtns.style.gap = "6px";
 
       const btnPendiente = document.createElement("button");
@@ -326,7 +325,7 @@ function renderReuniones(tbody) {
       tr.appendChild(tdLugar);
       tr.appendChild(tdTipo);
       tr.appendChild(tdPrioridad);
-      tr.appendChild(tdNum); // ✅ NUEVO
+      tr.appendChild(tdNum);
       tr.appendChild(tdEstado);
       tr.appendChild(tdAcciones);
 
