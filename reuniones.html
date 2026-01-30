@@ -8,21 +8,14 @@
 </head>
 <body>
 
-  <!-- MENÚ LATERAL -->
   <button id="menu-toggle" class="menu-toggle">☰ Menú</button>
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-title">Menú</div>
-    <nav class="sidebar-nav">
-      <a href="index.html">Captura</a>
-      <a href="reportes.html">Reportes</a>
-      <a href="reuniones.html">Reuniones</a>
-      <a href="compromisos.html">Compromisos</a>
-    </nav>
+    <nav class="sidebar-nav"></nav>
   </aside>
 
   <div class="app-container">
 
-    <!-- ENCABEZADO -->
     <header class="app-header">
       <h1>Reuniones de la comuna</h1>
       <p class="app-subtitle">
@@ -30,7 +23,6 @@
       </p>
     </header>
 
-    <!-- SIN SESIÓN -->
     <section id="no-session-section" class="card" style="display:none;">
       <h2>Sesión no encontrada</h2>
       <p class="small-text">
@@ -39,10 +31,8 @@
       <a href="index.html" class="btn-primary">Ir al inicio de sesión</a>
     </section>
 
-    <!-- CON SESIÓN / REUNIONES -->
     <section id="reuniones-section" class="card" style="display:none;">
 
-      <!-- Cabecera: solo comuna e info -->
       <div class="comuna-header">
         <div>
           <h2 id="reu-comuna-title">Comuna X</h2>
@@ -50,7 +40,7 @@
         </div>
       </div>
 
-      <!-- RESUMEN DE REUNIONES -->
+      <!-- RESUMEN -->
       <section class="subcard" style="margin-bottom:16px;">
         <h3>Resumen de reuniones</h3>
         <div class="resumen-grid">
@@ -73,7 +63,7 @@
         </div>
       </section>
 
-      <!-- FORMULARIO NUEVA REUNIÓN -->
+      <!-- FORMULARIO -->
       <section class="subcard">
         <h3>Registrar nueva reunión</h3>
 
@@ -110,16 +100,23 @@
             </select>
           </div>
 
+          <!-- ✅ NUEVO -->
+          <div class="form-group">
+            <label for="reunion-prioridad">Prioridad de la reunión</label>
+            <select id="reunion-prioridad">
+              <option value="Alta">Alta</option>
+              <option value="Media" selected>Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+
           <button type="submit" class="btn-primary">Guardar reunión</button>
         </form>
       </section>
 
-      <!-- LISTA DE REUNIONES -->
+      <!-- LISTADO -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Reuniones de la comuna</h3>
-        <p class="small-text" style="margin-bottom:8px;">
-          Actualiza el estado de cada reunión o elimínala si fue cancelada definitivamente.
-        </p>
 
         <div class="tabla-wrapper">
           <table class="tabla-registros tabla-reuniones">
@@ -129,13 +126,12 @@
                 <th>Hora</th>
                 <th>Lugar</th>
                 <th>Tipo</th>
+                <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="tbody-reuniones">
-              <!-- Filas generadas por JS -->
-            </tbody>
+            <tbody id="tbody-reuniones"></tbody>
           </table>
         </div>
       </section>
@@ -144,7 +140,6 @@
 
   </div>
 
-  <!-- JS -->
   <script src="assets/js/guard.js"></script>
   <script src="assets/js/reuniones.js"></script>
   <script src="assets/js/menu.js"></script>
