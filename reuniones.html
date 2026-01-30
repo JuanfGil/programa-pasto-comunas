@@ -40,7 +40,6 @@
         </div>
       </div>
 
-      <!-- RESUMEN -->
       <section class="subcard" style="margin-bottom:16px;">
         <h3>Resumen de reuniones</h3>
         <div class="resumen-grid">
@@ -63,7 +62,6 @@
         </div>
       </section>
 
-      <!-- FORMULARIO -->
       <section class="subcard">
         <h3>Registrar nueva reunión</h3>
 
@@ -100,7 +98,6 @@
             </select>
           </div>
 
-          <!-- ✅ NUEVO -->
           <div class="form-group">
             <label for="reunion-prioridad">Prioridad de la reunión</label>
             <select id="reunion-prioridad">
@@ -110,11 +107,16 @@
             </select>
           </div>
 
+          <!-- ✅ NUEVO -->
+          <div class="form-group">
+            <label for="reunion-num-personas">Número de personas</label>
+            <input id="reunion-num-personas" type="number" min="0" step="1" placeholder="Ej: 25" />
+          </div>
+
           <button type="submit" class="btn-primary">Guardar reunión</button>
         </form>
       </section>
 
-      <!-- LISTADO -->
       <section class="subcard" style="margin-top:16px;">
         <h3>Reuniones de la comuna</h3>
 
@@ -127,6 +129,7 @@
                 <th>Lugar</th>
                 <th>Tipo</th>
                 <th>Prioridad</th>
+                <th># Personas</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
