@@ -1,5 +1,6 @@
 // ======================================
 // COMPROMISOS.JS (aprobación global + filtro por comuna)
+// + Eliminar SOLO Teresa (admin)
 // ======================================
 
 const LS_SESION = "pasto_sesion";
@@ -40,6 +41,13 @@ function saveCompromisos(arr) { localStorage.setItem(LS_COMPROMISOS, JSON.string
 function isAprobadorGlobal(rol) {
   const r = (rol || "").toLowerCase();
   return r === "admin" || r === "gerencia" || r === "coordinador";
+}
+
+// 🔒 Solo Teresa puede eliminar
+function isTeresaAdmin(sesion) {
+  const u = (sesion?.username || "").toLowerCase();
+  const r = (sesion?.rol || "").toLowerCase();
+  return u === "teresa" && r === "admin";
 }
 
 function comunaActiva(sesion, datos) {
@@ -157,11 +165,9 @@ function normalizarCompromiso(c) {
 function getListaComunasDesdeDatos() {
   const datos = getDatos();
   const comunas = Object.keys(datos || {});
-  // fallback por si aún no existe estructura por comuna
   if (!comunas.length) {
     return Array.from({ length: 12 }, (_, i) => `Comuna ${i + 1}`);
   }
-  // ordenar por número si existe "Comuna 1..12"
   return comunas.sort((a, b) => {
     const na = parseInt((a.match(/\d+/) || ["0"])[0], 10);
     const nb = parseInt((b.match(/\d+/) || ["0"])[0], 10);
@@ -201,6 +207,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
 
   const rol = (sesion?.rol || "").toLowerCase();
   const aprobadorGlobal = isAprobadorGlobal(rol);
+  const puedeEliminar = isTeresaAdmin(sesion);
 
   const all = getCompromisos().map(normalizarCompromiso);
 
@@ -222,7 +229,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
   });
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="small-text">No hay compromisos registrados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="small-text">No hay compromisos registrados.</td></tr>`;
     return;
   }
 
@@ -231,6 +238,10 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
     const checked = c.aprobado ? "checked" : "";
     const disabled = aprobadorGlobal ? "" : "disabled";
     const title = c.aprobado ? `Aprobado por: ${c.aprobadoPor || "—"}` : "No aprobado";
+
+    const btnEliminar = puedeEliminar
+      ? `<button type="button" class="btn-secondary" data-del-comp-id="${c.id}" style="font-size:11px; padding:3px 10px;">Eliminar</button>`
+      : `<span class="small-text">—</span>`;
 
     return `
       <tr>
@@ -244,6 +255,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
         <td style="text-align:center;">
           <input type="checkbox" data-comp-id="${c.id}" ${checked} ${disabled} title="${title}">
         </td>
+        <td>${btnEliminar}</td>
       </tr>
     `;
   }).join("");
@@ -266,7 +278,30 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
 
       saveCompromisos(arr);
 
-      // Re-render manteniendo filtro actual
+      const selFiltro = document.getElementById("comp-filter-comuna");
+      const filtro = selFiltro ? selFiltro.value : "__ALL__";
+      renderTabla(sesion, comunaBase, filtro);
+    });
+  });
+
+  // 🔥 Eliminar (solo Teresa)
+  tbody.querySelectorAll('button[data-del-comp-id]').forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      // doble validación (por si alguien intenta forzar el botón)
+      if (!isTeresaAdmin(sesion)) {
+        alert("Acción no permitida.");
+        return;
+      }
+
+      const compId = e.currentTarget.getAttribute("data-del-comp-id");
+      if (!compId) return;
+
+      if (!confirm("¿Seguro que deseas eliminar este compromiso?")) return;
+
+      const arr = getCompromisos().map(normalizarCompromiso);
+      const nuevo = arr.filter(x => x.id !== compId);
+      saveCompromisos(nuevo);
+
       const selFiltro = document.getElementById("comp-filter-comuna");
       const filtro = selFiltro ? selFiltro.value : "__ALL__";
       renderTabla(sesion, comunaBase, filtro);
