@@ -503,3 +503,12 @@ a {
     width: auto;
   }
 }
+
+/* Fix final: botones en Acciones siempre alineados */
+.tabla-reuniones td.col-acciones .reuniones-acciones {
+  align-items: stretch;
+}
+.tabla-reuniones td.col-acciones .reuniones-acciones .btn-secondary {
+  width: 100%;
+}
+
