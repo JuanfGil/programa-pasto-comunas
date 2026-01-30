@@ -1,7 +1,7 @@
 // ======================================
-// COMPROMISOS.JS (aprobación global + filtro por comuna)
+// COMPROMISOS.JS
 // + Eliminar SOLO Teresa (admin) - delegación
-// + Campo: Responsable del compromiso
+// + Campos: Responsable, Potencial de votos
 // ======================================
 
 const LS_SESION = "pasto_sesion";
@@ -57,7 +57,7 @@ function comunaActiva(sesion, datos) {
   return keys[0] || "Comuna 1";
 }
 
-// Conectar compromisos con reuniones sin tocar reuniones.js
+// Conectar compromisos con reuniones
 function reunionKey(r) {
   const f = norm(r.fecha);
   const h = norm(r.hora);
@@ -145,6 +145,16 @@ function badgeEstado(e) {
   return `<span style="${base} background:#fef9c3; color:#854d0e;">Pendiente</span>`;
 }
 
+function parsePotencial(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  if (n < 0) return 0;
+  return Math.floor(n);
+}
+
 function normalizarCompromiso(c) {
   return {
     id: c.id || id("c"),
@@ -153,7 +163,8 @@ function normalizarCompromiso(c) {
     liderNombre: c.liderNombre || c.lider || "",
     reunionKey: c.reunionKey || "",
     tipoCompromiso: c.tipoCompromiso || c.tipo || "",
-    responsable: c.responsable || "", // ✅ NUEVO
+    responsable: c.responsable || "",
+    potencialVotos: (c.potencialVotos !== undefined && c.potencialVotos !== null) ? parsePotencial(c.potencialVotos) : null,
     estado: c.estado || "Pendiente",
     prioridad: c.prioridad || "Media",
     fecha: c.fecha || "",
@@ -223,7 +234,6 @@ function getTablaFiltrada(sesion, comunaBase, filtroComuna) {
   return { data, aprobadorGlobal };
 }
 
-// Render tabla
 function renderTabla(sesion, comunaBase, filtroComuna) {
   const tbody = document.getElementById("comp-tbody");
   if (!tbody) return;
@@ -232,7 +242,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
   const puedeEliminar = isTeresaAdmin(sesion);
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="small-text">No hay compromisos registrados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="small-text">No hay compromisos registrados.</td></tr>`;
     return;
   }
 
@@ -246,6 +256,8 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
       ? `<button type="button" class="btn-secondary" data-del-comp-id="${c.id}" style="font-size:11px; padding:3px 10px;">Eliminar</button>`
       : `<span class="small-text">—</span>`;
 
+    const potTxt = (c.potencialVotos === null || c.potencialVotos === undefined) ? "—" : String(c.potencialVotos);
+
     return `
       <tr>
         <td>${norm(c.comuna) || "—"}</td>
@@ -254,6 +266,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
         <td>${reunionTxt}</td>
         <td>${norm(c.tipoCompromiso) || "—"}</td>
         <td>${norm(c.responsable) || "—"}</td>
+        <td>${potTxt}</td>
         <td>${badgePrioridad(c.prioridad)}</td>
         <td>${badgeEstado(c.estado)}</td>
         <td style="text-align:center;">
@@ -285,7 +298,8 @@ function exportExcel(sesion, comunaBase, filtroComuna) {
     Fecha: c.fecha || "",
     "Líder/Contacto": c.liderNombre || "",
     "Tipo de compromiso": c.tipoCompromiso || "",
-    Responsable: c.responsable || "", // ✅ NUEVO
+    Responsable: c.responsable || "",
+    "Potencial de votos": (c.potencialVotos === null || c.potencialVotos === undefined) ? "" : c.potencialVotos,
     Estado: c.estado || "",
     Prioridad: c.prioridad || "",
     "Reunión": resolverReunionTextoPorKey(c.comuna || comunaBase, c.reunionKey),
@@ -332,26 +346,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const selFiltro = document.getElementById("comp-filter-comuna");
   if (selFiltro && aprobadorGlobal) {
-    selFiltro.addEventListener("change", () => {
-      renderTabla(sesion, comunaBase, selFiltro.value);
-    });
+    selFiltro.addEventListener("change", () => renderTabla(sesion, comunaBase, selFiltro.value));
   }
 
-  // Poblar selects
   poblarSelectLider(comunaBase);
   poblarSelectReunion(comunaBase, "");
 
   const selLider = document.getElementById("comp-lider");
-  selLider?.addEventListener("change", () => {
-    poblarSelectReunion(comunaBase, selLider.value || "");
-  });
+  selLider?.addEventListener("change", () => poblarSelectReunion(comunaBase, selLider.value || ""));
 
-  // Render inicial
   const filtroInicial = selFiltro ? selFiltro.value : "__ALL__";
   renderTabla(sesion, comunaBase, filtroInicial);
 
-  // Delegación: eliminar
   const tbody = document.getElementById("comp-tbody");
+
   tbody?.addEventListener("click", (ev) => {
     const delBtn = ev.target?.closest?.("button[data-del-comp-id]");
     if (!delBtn) return;
@@ -374,7 +382,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTabla(sesion, comunaBase, filtro);
   });
 
-  // Delegación: aprobar
   tbody?.addEventListener("change", (ev) => {
     const chk = ev.target;
     if (!chk || chk.type !== "checkbox" || !chk.hasAttribute("data-comp-id")) return;
@@ -397,14 +404,17 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTabla(sesion, comunaBase, filtro);
   });
 
-  // Guardar nuevo compromiso
   document.getElementById("comp-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
 
     const liderKey = norm(document.getElementById("comp-lider")?.value);
     const reunionKeySel = norm(document.getElementById("comp-reunion")?.value);
     const tipoCompromiso = norm(document.getElementById("comp-tipo")?.value);
-    const responsable = norm(document.getElementById("comp-responsable")?.value); // ✅ NUEVO
+    const responsable = norm(document.getElementById("comp-responsable")?.value);
+
+    const potRaw = document.getElementById("comp-potencial")?.value;
+    const potencialVotos = parsePotencial(potRaw);
+
     const estado = norm(document.getElementById("comp-estado")?.value) || "Pendiente";
     const prioridad = norm(document.getElementById("comp-prioridad")?.value) || "Media";
     const fecha = norm(document.getElementById("comp-fecha")?.value);
@@ -428,7 +438,8 @@ document.addEventListener("DOMContentLoaded", () => {
       liderNombre: liderNombre || "Contacto",
       reunionKey: reunionKeySel || "",
       tipoCompromiso,
-      responsable, // ✅ NUEVO
+      responsable,
+      potencialVotos,
       estado,
       prioridad,
       fecha,
