@@ -512,3 +512,10 @@ a {
   width: 100%;
 }
 
+/* Reuniones: columna responsable un poco más legible */
+.tabla-reuniones td:nth-child(7) {
+  max-width: 220px;
+  word-break: break-word;
+}
+
+
