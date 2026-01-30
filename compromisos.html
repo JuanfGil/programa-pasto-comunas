@@ -68,10 +68,15 @@
             <input id="comp-tipo" type="text" required placeholder="Ej: logística, sonido, transporte..." />
           </div>
 
-          <!-- ✅ NUEVO: Responsable -->
           <div class="form-group">
             <label for="comp-responsable">Responsable del compromiso</label>
             <input id="comp-responsable" type="text" placeholder="Ej: Juan, Ana, Equipo logístico..." />
+          </div>
+
+          <!-- ✅ NUEVO: Potencial de votos -->
+          <div class="form-group">
+            <label for="comp-potencial">Potencial de votos</label>
+            <input id="comp-potencial" type="number" min="0" step="1" placeholder="Ej: 10" />
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -115,6 +120,7 @@
                 <th>Reunión</th>
                 <th>Tipo</th>
                 <th>Responsable</th>
+                <th>Potencial de votos</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Aprobado</th>
