@@ -1,6 +1,7 @@
 // ======================================
 // COMPROMISOS.JS (aprobación global + filtro por comuna)
-// + Eliminar SOLO Teresa (admin) - FIX robusto con delegación
+// + Eliminar SOLO Teresa (admin) - delegación
+// + Campo: Responsable del compromiso
 // ======================================
 
 const LS_SESION = "pasto_sesion";
@@ -43,7 +44,7 @@ function isAprobadorGlobal(rol) {
   return r === "admin" || r === "gerencia" || r === "coordinador";
 }
 
-// 🔒 Solo Teresa puede eliminar (doble validación)
+// 🔒 Solo Teresa puede eliminar
 function isTeresaAdmin(sesion) {
   const u = (sesion?.username || "").toLowerCase();
   const r = (sesion?.rol || "").toLowerCase();
@@ -152,6 +153,7 @@ function normalizarCompromiso(c) {
     liderNombre: c.liderNombre || c.lider || "",
     reunionKey: c.reunionKey || "",
     tipoCompromiso: c.tipoCompromiso || c.tipo || "",
+    responsable: c.responsable || "", // ✅ NUEVO
     estado: c.estado || "Pendiente",
     prioridad: c.prioridad || "Media",
     fecha: c.fecha || "",
@@ -221,7 +223,7 @@ function getTablaFiltrada(sesion, comunaBase, filtroComuna) {
   return { data, aprobadorGlobal };
 }
 
-// 🔥 Render tabla
+// Render tabla
 function renderTabla(sesion, comunaBase, filtroComuna) {
   const tbody = document.getElementById("comp-tbody");
   if (!tbody) return;
@@ -230,7 +232,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
   const puedeEliminar = isTeresaAdmin(sesion);
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="small-text">No hay compromisos registrados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="small-text">No hay compromisos registrados.</td></tr>`;
     return;
   }
 
@@ -251,6 +253,7 @@ function renderTabla(sesion, comunaBase, filtroComuna) {
         <td>${norm(c.liderNombre) || "—"}</td>
         <td>${reunionTxt}</td>
         <td>${norm(c.tipoCompromiso) || "—"}</td>
+        <td>${norm(c.responsable) || "—"}</td>
         <td>${badgePrioridad(c.prioridad)}</td>
         <td>${badgeEstado(c.estado)}</td>
         <td style="text-align:center;">
@@ -282,6 +285,7 @@ function exportExcel(sesion, comunaBase, filtroComuna) {
     Fecha: c.fecha || "",
     "Líder/Contacto": c.liderNombre || "",
     "Tipo de compromiso": c.tipoCompromiso || "",
+    Responsable: c.responsable || "", // ✅ NUEVO
     Estado: c.estado || "",
     Prioridad: c.prioridad || "",
     "Reunión": resolverReunionTextoPorKey(c.comuna || comunaBase, c.reunionKey),
@@ -346,36 +350,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const filtroInicial = selFiltro ? selFiltro.value : "__ALL__";
   renderTabla(sesion, comunaBase, filtroInicial);
 
-  // ✅ Delegación de eventos: aprobar + eliminar (siempre funciona aunque se re-renderice)
+  // Delegación: eliminar
   const tbody = document.getElementById("comp-tbody");
   tbody?.addEventListener("click", (ev) => {
-    const target = ev.target;
+    const delBtn = ev.target?.closest?.("button[data-del-comp-id]");
+    if (!delBtn) return;
 
-    // Eliminar
-    const delBtn = target?.closest?.("button[data-del-comp-id]");
-    if (delBtn) {
-      if (!isTeresaAdmin(sesion)) {
-        alert("Acción no permitida.");
-        return;
-      }
-
-      const compId = delBtn.getAttribute("data-del-comp-id");
-      if (!compId) return;
-
-      if (!confirm("¿Seguro que deseas eliminar este compromiso?")) return;
-
-      // importante: operar sobre el array REAL del storage
-      const raw = getCompromisos();
-      const nuevo = raw.filter(x => (x?.id || "") !== compId);
-      saveCompromisos(nuevo);
-
-      const filtro = selFiltro ? selFiltro.value : "__ALL__";
-      renderTabla(sesion, comunaBase, filtro);
+    if (!isTeresaAdmin(sesion)) {
+      alert("Acción no permitida.");
       return;
     }
+
+    const compId = delBtn.getAttribute("data-del-comp-id");
+    if (!compId) return;
+
+    if (!confirm("¿Seguro que deseas eliminar este compromiso?")) return;
+
+    const raw = getCompromisos();
+    const nuevo = raw.filter(x => (x?.id || "") !== compId);
+    saveCompromisos(nuevo);
+
+    const filtro = selFiltro ? selFiltro.value : "__ALL__";
+    renderTabla(sesion, comunaBase, filtro);
   });
 
-  // Aprobación (change) - delegación por evento change
+  // Delegación: aprobar
   tbody?.addEventListener("change", (ev) => {
     const chk = ev.target;
     if (!chk || chk.type !== "checkbox" || !chk.hasAttribute("data-comp-id")) return;
@@ -398,12 +397,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTabla(sesion, comunaBase, filtro);
   });
 
+  // Guardar nuevo compromiso
   document.getElementById("comp-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
 
     const liderKey = norm(document.getElementById("comp-lider")?.value);
     const reunionKeySel = norm(document.getElementById("comp-reunion")?.value);
     const tipoCompromiso = norm(document.getElementById("comp-tipo")?.value);
+    const responsable = norm(document.getElementById("comp-responsable")?.value); // ✅ NUEVO
     const estado = norm(document.getElementById("comp-estado")?.value) || "Pendiente";
     const prioridad = norm(document.getElementById("comp-prioridad")?.value) || "Media";
     const fecha = norm(document.getElementById("comp-fecha")?.value);
@@ -427,6 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
       liderNombre: liderNombre || "Contacto",
       reunionKey: reunionKeySel || "",
       tipoCompromiso,
+      responsable, // ✅ NUEVO
       estado,
       prioridad,
       fecha,
