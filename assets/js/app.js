@@ -19,6 +19,29 @@ const USUARIOS = [
 ];
 
 // ================================
+// HELPERS
+// ================================
+function norm(s) { return (s || "").toString().trim(); }
+
+function normalizarCompromisoLider(v) {
+  const t = norm(v).toLowerCase();
+  if (t === "comprometido") return "Comprometido";
+  if (t === "no ubicado" || t === "noubi" || t === "no_ubicado") return "No ubicado";
+  if (t === "no apoyan" || t === "no apoyan " || t === "noapoyan" || t === "no_apoyan") return "No apoyan";
+  return "";
+}
+
+function badgeCompromisoLider(v) {
+  const val = normalizarCompromisoLider(v);
+  const base = `display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900;`;
+
+  if (val === "Comprometido") return `<span style="${base} background:#dcfce7; color:#166534;">🟢 Comprometido</span>`;
+  if (val === "No ubicado") return `<span style="${base} background:#fef9c3; color:#854d0e;">🟡 No ubicado</span>`;
+  if (val === "No apoyan") return `<span style="${base} background:#fee2e2; color:#991b1b;">🔴 No apoyan</span>`;
+  return `<span style="${base} background:#e5e7eb; color:#111827;">⚪ Sin definir</span>`;
+}
+
+// ================================
 // SESIÓN
 // ================================
 function cargarSesion() {
@@ -150,10 +173,7 @@ function refrescarUICaptura() {
       selectLiderPersona.appendChild(opt);
     });
 
-    // intentar recuperar selección anterior
-    if (valorPrevio) {
-      selectLiderPersona.value = valorPrevio;
-    }
+    if (valorPrevio) selectLiderPersona.value = valorPrevio;
   }
 
   // Lista de líderes
@@ -178,9 +198,23 @@ function refrescarUICaptura() {
     header.className = "lider-header";
 
     const infoLider = document.createElement("div");
+
+    // fila 1: nombre + badge compromiso (semáforo)
+    const filaNombre = document.createElement("div");
+    filaNombre.style.display = "flex";
+    filaNombre.style.flexWrap = "wrap";
+    filaNombre.style.alignItems = "center";
+    filaNombre.style.gap = "8px";
+
     const nombreEl = document.createElement("div");
     nombreEl.className = "lider-nombre";
     nombreEl.textContent = lider.nombre || "(Sin nombre)";
+
+    const badgeWrap = document.createElement("div");
+    badgeWrap.innerHTML = badgeCompromisoLider(lider.compromisoLider);
+
+    filaNombre.appendChild(nombreEl);
+    filaNombre.appendChild(badgeWrap);
 
     const metaEl = document.createElement("div");
     metaEl.className = "lider-meta";
@@ -188,7 +222,7 @@ function refrescarUICaptura() {
     const tipoText = lider.tipo ? `Tipo: ${lider.tipo}` : "Tipo: N/D";
     metaEl.textContent = `${docText} · ${tipoText}`;
 
-    infoLider.appendChild(nombreEl);
+    infoLider.appendChild(filaNombre);
     infoLider.appendChild(metaEl);
 
     const bloqueBtnsLider = document.createElement("div");
@@ -356,13 +390,15 @@ function agregarLiderDesdeFormulario() {
   const dirInput = document.getElementById("lider-direccion");
   const zonaInput = document.getElementById("lider-zona");
   const tipoSelect = document.getElementById("lider-tipo");
+  const compSelect = document.getElementById("lider-compromiso"); // ✅ NUEVO
 
-  const nombre = (nombreInput.value || "").trim();
-  const documento = (docInput.value || "").trim();
-  const telefono = (telInput.value || "").trim();
-  const direccion = (dirInput.value || "").trim();
-  const zona = (zonaInput.value || "").trim();
-  const tipo = (tipoSelect.value || "").trim();
+  const nombre = norm(nombreInput?.value);
+  const documento = norm(docInput?.value);
+  const telefono = norm(telInput?.value);
+  const direccion = norm(dirInput?.value);
+  const zona = norm(zonaInput?.value);
+  const tipo = norm(tipoSelect?.value);
+  const compromisoLider = normalizarCompromisoLider(compSelect?.value); // ✅ NUEVO
 
   if (!nombre || !documento) {
     alert("Por favor diligencia al menos nombre y número de documento del líder.");
@@ -377,6 +413,7 @@ function agregarLiderDesdeFormulario() {
     direccion,
     zona,
     tipo,
+    compromisoLider, // ✅ NUEVO
     personas: [],
   };
 
@@ -384,12 +421,13 @@ function agregarLiderDesdeFormulario() {
   guardarDatos();
   refrescarUICaptura();
 
-  nombreInput.value = "";
-  docInput.value = "";
-  telInput.value = "";
-  dirInput.value = "";
-  zonaInput.value = "";
-  tipoSelect.value = "";
+  if (nombreInput) nombreInput.value = "";
+  if (docInput) docInput.value = "";
+  if (telInput) telInput.value = "";
+  if (dirInput) dirInput.value = "";
+  if (zonaInput) zonaInput.value = "";
+  if (tipoSelect) tipoSelect.value = "";
+  if (compSelect) compSelect.value = ""; // ✅ NUEVO
 }
 
 function editarLider(idLider) {
@@ -414,18 +452,24 @@ function editarLider(idLider) {
   const nuevaZona = prompt("Zona de votación:", lider.zona || "");
   if (nuevaZona === null) return;
 
-  const nuevoTipo = prompt(
-    "Tipo de líder (A, B o C):",
-    lider.tipo || ""
-  );
+  const nuevoTipo = prompt("Tipo de líder (A, B o C):", lider.tipo || "");
   if (nuevoTipo === null) return;
 
-  lider.nombre = nuevoNombre.trim();
-  lider.documento = nuevoDoc.trim();
-  lider.telefono = nuevoTel.trim();
-  lider.direccion = nuevaDir.trim();
-  lider.zona = nuevaZona.trim();
-  lider.tipo = nuevoTipo.trim().toUpperCase();
+  // ✅ NUEVO: compromiso (acepta solo las 3 opciones, si no coincide queda “Sin definir”)
+  const compDefault = lider.compromisoLider || "";
+  const nuevoComp = prompt(
+    'Compromiso del líder (Comprometido / No ubicado / No apoyan):',
+    compDefault
+  );
+  if (nuevoComp === null) return;
+
+  lider.nombre = norm(nuevoNombre);
+  lider.documento = norm(nuevoDoc);
+  lider.telefono = norm(nuevoTel);
+  lider.direccion = norm(nuevaDir);
+  lider.zona = norm(nuevaZona);
+  lider.tipo = norm(nuevoTipo).toUpperCase();
+  lider.compromisoLider = normalizarCompromisoLider(nuevoComp);
 
   guardarDatos();
   refrescarUICaptura();
@@ -476,13 +520,13 @@ function agregarPersonaDesdeFormulario() {
     return;
   }
 
-  const nombre = (nombreInput.value || "").trim();
-  const documento = (docInput.value || "").trim();
-  const telefono = (telInput.value || "").trim();
-  const direccion = (dirInput.value || "").trim();
-  const zona = (zonaInput.value || "").trim();
-  const conoceLider = !!chkConoce.checked;
-  const votaTeresa = !!chkVota.checked;
+  const nombre = norm(nombreInput?.value);
+  const documento = norm(docInput?.value);
+  const telefono = norm(telInput?.value);
+  const direccion = norm(dirInput?.value);
+  const zona = norm(zonaInput?.value);
+  const conoceLider = !!chkConoce?.checked;
+  const votaTeresa = !!chkVota?.checked;
 
   if (!nombre || !documento) {
     alert("Por favor diligencia al menos nombre y número de documento de la persona.");
@@ -508,13 +552,13 @@ function agregarPersonaDesdeFormulario() {
   guardarDatos();
   refrescarUICaptura();
 
-  nombreInput.value = "";
-  docInput.value = "";
-  telInput.value = "";
-  dirInput.value = "";
-  zonaInput.value = "";
-  chkConoce.checked = true;
-  chkVota.checked = false;
+  if (nombreInput) nombreInput.value = "";
+  if (docInput) docInput.value = "";
+  if (telInput) telInput.value = "";
+  if (dirInput) dirInput.value = "";
+  if (zonaInput) zonaInput.value = "";
+  if (chkConoce) chkConoce.checked = true;
+  if (chkVota) chkVota.checked = false;
 }
 
 function editarPersona(idLider, idPersona) {
@@ -542,23 +586,17 @@ function editarPersona(idLider, idPersona) {
   const nuevaZona = prompt("Zona de votación:", persona.zona || "");
   if (nuevaZona === null) return;
 
-  const respConoce = prompt(
-    '¿Conoce al líder? (s/n)',
-    persona.conoceLider ? "s" : "n"
-  );
+  const respConoce = prompt('¿Conoce al líder? (s/n)', persona.conoceLider ? "s" : "n");
   if (respConoce === null) return;
 
-  const respVota = prompt(
-    '¿Se compromete a votar por Teresa? (s/n)',
-    persona.votaTeresa ? "s" : "n"
-  );
+  const respVota = prompt('¿Se compromete a votar por Teresa? (s/n)', persona.votaTeresa ? "s" : "n");
   if (respVota === null) return;
 
-  persona.nombre = nuevoNombre.trim();
-  persona.documento = nuevoDoc.trim();
-  persona.telefono = nuevoTel.trim();
-  persona.direccion = nuevaDir.trim();
-  persona.zona = nuevaZona.trim();
+  persona.nombre = norm(nuevoNombre);
+  persona.documento = norm(nuevoDoc);
+  persona.telefono = norm(nuevoTel);
+  persona.direccion = norm(nuevaDir);
+  persona.zona = norm(nuevaZona);
   persona.conoceLider = respConoce.toLowerCase().startsWith("s");
   persona.votaTeresa = respVota.toLowerCase().startsWith("s");
 
@@ -576,9 +614,7 @@ function eliminarPersona(idLider, idPersona) {
   const persona = lider.personas.find((p) => p.id === idPersona);
   if (!persona) return;
 
-  const confirmar = confirm(
-    `¿Seguro que deseas eliminar a la persona "${persona.nombre}"?`
-  );
+  const confirmar = confirm(`¿Seguro que deseas eliminar a la persona "${persona.nombre}"?`);
   if (!confirmar) return;
 
   lider.personas = lider.personas.filter((p) => p.id !== idPersona);
@@ -619,19 +655,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (comunaSection) comunaSection.style.display = "none";
   }
 
-  // Manejo login
+  // Manejo login (se mantiene)
   if (loginForm) {
     loginForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const usernameInput = document.getElementById("username");
       const passwordInput = document.getElementById("password");
 
-      const user = (usernameInput.value || "").trim();
-      const pass = (passwordInput.value || "").trim();
+      const user = norm(usernameInput?.value);
+      const pass = norm(passwordInput?.value);
 
-      const encontrado = USUARIOS.find(
-        (u) => u.username === user && u.password === pass
-      );
+      const encontrado = USUARIOS.find((u) => u.username === user && u.password === pass);
 
       if (!encontrado) {
         if (loginError) loginError.style.display = "block";
