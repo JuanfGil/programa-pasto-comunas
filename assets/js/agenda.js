@@ -24,6 +24,30 @@ function agNormalizarEstado(estado) {
     .trim();
 }
 
+// ✅ NUEVO: Prioridad
+function agNormalizarPrioridad(p) {
+  const v = (p || "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+  if (v === "alta") return "alta";
+  if (v === "baja") return "baja";
+  return "media";
+}
+
+// ✅ NUEVO: Badge Prioridad (Alta rojo / Media amarillo / Baja gris)
+function agBadgePrioridad(p) {
+  const pr = agNormalizarPrioridad(p);
+  const base = `display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;`;
+
+  if (pr === "alta") return `<span style="${base} background:#fee2e2; color:#991b1b;">Alta</span>`;
+  if (pr === "baja") return `<span style="${base} background:#e5e7eb; color:#111827;">Baja</span>`;
+  return `<span style="${base} background:#fef9c3; color:#854d0e;">Media</span>`;
+}
+
 function agCargarReuniones() {
   // Keys posibles (por si tu reuniones.html cambió el nombre)
   const keysPosibles = ["pasto_reuniones", "reuniones", "pasto_meetings"];
@@ -39,8 +63,8 @@ function agCargarReuniones() {
 }
 
 function agParseFechaHora(item) {
-  const f = (item.fecha || "").toString().trim();          // "2026-01-22"
-  const h = (item.hora || "").toString().trim();           // "14:30"
+  const f = (item.fecha || "").toString().trim();
+  const h = (item.hora || "").toString().trim();
   const fh = (item.fechaHora || item.datetime || "").toString().trim();
 
   if (fh) {
@@ -62,7 +86,6 @@ function agParseFechaHora(item) {
 }
 
 function agFechaISO(dateObj) {
-  // YYYY-MM-DD en hora local
   const y = dateObj.getFullYear();
   const m = String(dateObj.getMonth() + 1).padStart(2, "0");
   const d = String(dateObj.getDate()).padStart(2, "0");
@@ -91,7 +114,7 @@ function agRenderResumen(lista) {
 
 function agBadgeEstado(estado) {
   const est = agNormalizarEstado(estado);
-  const base = `display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700;`;
+  const base = `display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;`;
 
   if (est === "realizada") return `<span style="${base} background:#dcfce7; color:#166534;">Realizada</span>`;
   if (est === "cancelada") return `<span style="${base} background:#fee2e2; color:#991b1b;">Cancelada</span>`;
@@ -104,6 +127,7 @@ function agCard(item) {
   const lugar = (item.lugar || "").toString().trim();
   const tipo = (item.tipo || "").toString().trim();
   const estado = item.estado || "Pendiente";
+  const prioridad = item.prioridad || "Media"; // ✅ NUEVO (si no existe, cae en Media)
 
   return `
     <div style="border:1px solid #e5e7eb; border-radius:14px; padding:14px; background:#fff;">
@@ -111,6 +135,7 @@ function agCard(item) {
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
           <div style="font-weight:900;">${tipo || "Reunión"}</div>
           ${agBadgeEstado(estado)}
+          ${agBadgePrioridad(prioridad)}
         </div>
         <div style="color:#6b7280; font-size:13px;">
           ${fecha || "Sin fecha"} ${hora ? "• " + hora : ""}
@@ -159,10 +184,9 @@ function agSeccionar(lista) {
     else pasadas.push(r);
   }
 
-  // Orden:
   hoy.sort((a, b) => agParseFechaHora(a) - agParseFechaHora(b));
   proximas.sort((a, b) => agParseFechaHora(a) - agParseFechaHora(b));
-  pasadas.sort((a, b) => agParseFechaHora(b) - agParseFechaHora(a)); // más recientes primero
+  pasadas.sort((a, b) => agParseFechaHora(b) - agParseFechaHora(a));
 
   return { hoy, proximas, pasadas };
 }
@@ -199,24 +223,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let filtrada = [...baseLista];
 
-    // estado
     if (est !== "todas") {
       filtrada = filtrada.filter(r => agNormalizarEstado(r.estado) === est);
     }
 
-    // búsqueda
+    // ✅ búsqueda también permite “alta/media/baja”
     if (q) {
       filtrada = filtrada.filter(r => {
         const lugar = (r.lugar || "").toString().toLowerCase();
         const tipo = (r.tipo || "").toString().toLowerCase();
-        return lugar.includes(q) || tipo.includes(q);
+        const pr = agNormalizarPrioridad(r.prioridad || "media");
+        return lugar.includes(q) || tipo.includes(q) || pr.includes(q);
       });
     }
 
-    // resumen basado en lo que se está viendo (filtrado)
     agRenderResumen(filtrada);
 
-    // secciones
     const { hoy, proximas, pasadas } = agSeccionar(filtrada);
 
     agSetText("ag-count-hoy", hoy.length);
@@ -228,10 +250,8 @@ document.addEventListener("DOMContentLoaded", () => {
     agRenderLista("agenda-list-pasadas", pasadas);
   }
 
-  // Render inicial
   aplicarFiltrosYRender();
 
-  // Eventos
   if (filtroEstado) filtroEstado.addEventListener("change", aplicarFiltrosYRender);
   if (search) search.addEventListener("input", aplicarFiltrosYRender);
 });
