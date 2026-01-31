@@ -49,6 +49,77 @@ function setText(id, value) {
 }
 
 // ================================
+// ✅ SEMÁFORO: COMPROMISO DEL LÍDER
+// ================================
+function normalizarCompromisoLider(v) {
+  return (v || "")
+    .toString()
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function badgeCompromisoLider(valor) {
+  const v = normalizarCompromisoLider(valor);
+
+  const base = `display:inline-flex; align-items:center; justify-content:center; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; white-space:nowrap;`;
+
+  if (v === "comprometido") {
+    return `<span style="${base} background:#dcfce7; color:#166534;">🟢 Comprometido</span>`;
+  }
+  if (v === "no ubicado" || v === "no_ubicado" || v === "no-ubicado") {
+    return `<span style="${base} background:#fef9c3; color:#854d0e;">🟡 No ubicado</span>`;
+  }
+  if (v === "no apoyan" || v === "no_apoyan" || v === "no-apoyan") {
+    return `<span style="${base} background:#fee2e2; color:#991b1b;">🔴 No apoyan</span>`;
+  }
+
+  return `<span style="${base} background:#e5e7eb; color:#111827;">⚪ Sin definir</span>`;
+}
+
+function renderSemaforoLideres(datos, comuna) {
+  const cont = document.getElementById("rep-lideres-semaforo");
+  if (!cont) return;
+
+  const comunaData = datos[comuna] || { lideres: [] };
+  const lideres = Array.isArray(comunaData.lideres) ? comunaData.lideres : [];
+
+  if (!lideres.length) {
+    cont.innerHTML = `<div class="small-text">Aún no hay líderes registrados para esta comuna.</div>`;
+    return;
+  }
+
+  // Orden por nombre
+  const lista = [...lideres].sort((a, b) => {
+    const na = (a.nombre || "").toString().toLowerCase();
+    const nb = (b.nombre || "").toString().toLowerCase();
+    return na.localeCompare(nb);
+  });
+
+  cont.innerHTML = lista.map((l) => {
+    const nombre = (l.nombre || "(Sin nombre)").toString();
+    const doc = (l.documento || "N/D").toString();
+    const tipo = (l.tipo || "N/D").toString();
+    const comp = l.compromisoLider || l.compromiso || ""; // fallback por si luego lo llamas distinto
+
+    return `
+      <div style="border:1px solid #e5e7eb; border-radius:14px; padding:12px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="font-weight:900;">${nombre}</div>
+            <div style="font-size:12px; color:#64748b;">Doc: ${doc} · Tipo: ${tipo}</div>
+          </div>
+          <div>
+            ${badgeCompromisoLider(comp)}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ================================
 // RESUMEN GENERAL (LÍDERES / PERSONAS)
 // ================================
 function renderResumenComuna(datos, comuna, sesion) {
@@ -294,6 +365,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Resumen general
   renderResumenComuna(datos, comuna, sesion);
+
+  // ✅ Semáforo líderes (NO rompe si el campo no existe)
+  renderSemaforoLideres(datos, comuna);
 
   // Compromisos (usando localStorage "pasto_compromisos")
   renderCompromisosComuna(comuna);
